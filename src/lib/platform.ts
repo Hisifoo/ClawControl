@@ -89,8 +89,8 @@ export async function openExternal(url: string): Promise<void> {
   }
 
   if (isNativeMobile()) {
-    // Prefer the OS default browser over an in-app webview.
-    // AppLauncher.openUrl uses the system URL handler (iOS default browser setting, Android default).
+    // Prefer the OS handler (default browser, phone app, mail app) over an in-app webview.
+    // AppLauncher.openUrl uses the system URL handler.
     try {
       await AppLauncher.openUrl({ url })
     } catch {
@@ -100,7 +100,13 @@ export async function openExternal(url: string): Promise<void> {
     return
   }
 
-  window.open(url, '_blank')
+  // Web fallback
+  if (/^(mailto:|tel:)/i.test(url)) {
+    window.location.href = url
+    return
+  }
+
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 // Certificate trust (only available on Electron)

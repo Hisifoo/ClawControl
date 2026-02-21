@@ -238,7 +238,8 @@ function ViewerMarkdown({ content }: { content: string }) {
       if (!anchor) return
 
       const href = anchor.getAttribute('href') || ''
-      if (href.startsWith('http://') || href.startsWith('https://')) {
+      const isExternal = /^(https?:\/\/|mailto:|tel:)/i.test(href)
+      if (isExternal) {
         e.preventDefault()
         e.stopPropagation()
         void openExternal(href)

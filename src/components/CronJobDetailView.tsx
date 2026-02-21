@@ -118,13 +118,13 @@ export function CronJobDetailView() {
               components={{
                 a: ({ href, children, ...props }) => {
                   const url = href || ''
-                  const isHttp = url.startsWith('http://') || url.startsWith('https://')
+                  const isExternal = /^(https?:\/\/|mailto:|tel:)/i.test(url)
                   return (
                     <a
                       {...props}
                       href={href}
                       onClick={(e) => {
-                        if (!isHttp) return
+                        if (!isExternal) return
                         e.preventDefault()
                         void openExternal(url)
                       }}

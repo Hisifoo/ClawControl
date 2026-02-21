@@ -82,10 +82,15 @@ function createWindow() {
     menu.popup()
   })
 
-  // Open external links in the user's default browser
+  // Open external links in the user's default browser / OS handler
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http:') || url.startsWith('https:')) {
-      shell.openExternal(url)
+    try {
+      const u = new URL(url)
+      if (u.protocol === 'http:' || u.protocol === 'https:' || u.protocol === 'mailto:' || u.protocol === 'tel:') {
+        shell.openExternal(url)
+      }
+    } catch {
+      // ignore invalid URLs
     }
     return { action: 'deny' }
   })
@@ -97,8 +102,13 @@ function createWindow() {
       : 'file://'
     if (!url.startsWith(appOrigin)) {
       event.preventDefault()
-      if (url.startsWith('http:') || url.startsWith('https:')) {
-        shell.openExternal(url)
+      try {
+        const u = new URL(url)
+        if (u.protocol === 'http:' || u.protocol === 'https:' || u.protocol === 'mailto:' || u.protocol === 'tel:') {
+          shell.openExternal(url)
+        }
+      } catch {
+        // ignore invalid URLs
       }
     }
   })
@@ -178,10 +188,11 @@ ipcMain.handle('openclaw:getConfig', async () => {
 })
 
 ipcMain.handle('shell:openExternal', async (_event, url: string) => {
-  // Validate URL to only allow http/https protocols
+  // Validate URL to only allow safe protocols
   try {
     const parsedUrl = new URL(url)
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    const allowed = new Set(['http:', 'https:', 'mailto:', 'tel:'])
+    if (!allowed.has(parsedUrl.protocol)) {
       throw new Error('Invalid protocol')
     }
     await shell.openExternal(url)

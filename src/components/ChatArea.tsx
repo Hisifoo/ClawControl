@@ -390,7 +390,8 @@ function MessageContent({ content, images }: { content: string; images?: Message
       const anchor = target.closest('a') as HTMLAnchorElement | null
       if (anchor) {
         const href = anchor.getAttribute('href') || ''
-        if (href.startsWith('http://') || href.startsWith('https://')) {
+        const isExternal = /^(https?:\/\/|mailto:|tel:)/i.test(href)
+        if (isExternal) {
           e.preventDefault()
           e.stopPropagation()
           void openExternal(href)
