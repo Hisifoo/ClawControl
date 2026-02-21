@@ -244,6 +244,23 @@ export function SettingsModal() {
 
   if (!showSettings) return null
 
+  const originHelpBlock = (
+    <div style={{ marginTop: '8px', fontSize: '12px', lineHeight: '1.5' }}>
+      Your ClawControl origin must be allowed on the server. Run this on your OpenClaw host:
+      <code style={{ display: 'block', padding: '8px', background: 'var(--bg-primary)', borderRadius: '6px', marginTop: '6px', fontSize: '11px', wordBreak: 'break-all' }}>
+        {`openclaw config set gateway.controlUi.allowedOrigins '["${window.location.origin}"]'`}
+      </code>
+      <span style={{ display: 'block', marginTop: '4px' }}>Then restart the gateway for the change to take effect.</span>
+      <a
+        href="#"
+        onClick={(e) => { e.preventDefault(); openExternal('https://docs.openclaw.ai/web/control-ui') }}
+        style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+      >
+        Learn more
+      </a>
+    </div>
+  )
+
   return (
     <div className="modal-overlay" onClick={() => setShowSettings(false)}>
       <div className="modal" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
@@ -367,9 +384,9 @@ export function SettingsModal() {
                 <span className="form-hint">Required if authentication is enabled on the server.</span>
               </div>
 
-              {error && <div className="form-error">{error}</div>}
+              {error && <div className="form-error">{error}{error.toLowerCase().includes('origin not allowed') && originHelpBlock}</div>}
               {!error && !connected && connectionError && (
-                <div className="form-error">{connectionError}</div>
+                <div className="form-error">{connectionError}{connectionError.toLowerCase().includes('origin not allowed') && originHelpBlock}</div>
               )}
             </>
           )}
