@@ -24,7 +24,8 @@
     "mobile:ios": "npx vite build --config vite.config.mobile.ts && npx cap sync ios && npx @capacitor/assets generate --ios --splashBackgroundColor '#06080a' --iconBackgroundColor '#06080a' && node scripts/fix-ios-splash.js && npx cap open ios",
     "mobile:android": "npx vite build --config vite.config.mobile.ts && npx cap sync android && npx @capacitor/assets generate --android --splashBackgroundColor '#06080a' --iconBackgroundColor '#06080a' && npx cap open android",
     "mobile:dev": "npx vite --config vite.config.mobile.ts",
-    "mobile:assets": "npx @capacitor/assets generate --android --ios --splashBackgroundColor '#06080a' --iconBackgroundColor '#06080a'"
+    "mobile:assets": "npx @capacitor/assets generate --android --ios --splashBackgroundColor '#06080a' --iconBackgroundColor '#06080a'",
+    "build:linux": "npx vite build && npx electron-builder --linux"
   },
   "dependencies": {
     "@capacitor-community/speech-recognition": "^7.0.1",
@@ -109,6 +110,14 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "icon": "build/icon.png"
     }
   }
 }

@@ -232,6 +232,18 @@ npm run build:mac
 
 Output: `release/ClawControl.dmg`
 
+### Linux (from Linux)
+
+```bash
+npm run build:linux
+```
+
+Output: `release/ClawControl-*.AppImage` and `release/clawcontrol_*_amd64.deb`
+
+Install:
+- **AppImage**: `chmod +x release/ClawControl-*.AppImage` then run it
+- **Debian/Ubuntu (.deb)**: `sudo dpkg -i release/clawcontrol_*_amd64.deb`
+
 ### Cross-Platform Note
 
 Building Windows packages from Linux/WSL requires Wine. For best results:
