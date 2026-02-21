@@ -545,6 +545,38 @@ a {
   height: 14px;
 }
 
+.session-pin {
+  opacity: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+  margin-left: 4px;
+}
+
+.session-item:hover .session-pin {
+  opacity: 1;
+}
+
+.session-pin.pinned {
+  opacity: 1;
+  color: var(--accent-cyan);
+}
+
+.session-pin:hover {
+  background: rgba(0, 255, 255, 0.12);
+  color: var(--accent-cyan);
+}
+
+.session-pin svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* Session Unread Badge */
 .session-badge {
   min-width: 18px;
@@ -568,6 +600,7 @@ a {
 }
 
 .sidebar.collapsed .session-content,
+.sidebar.collapsed .session-pin,
 .sidebar.collapsed .session-delete {
   display: none;
 }

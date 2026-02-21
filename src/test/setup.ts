@@ -51,6 +51,13 @@ class MockWebSocket {
   static CLOSED = 3
 
   readyState = MockWebSocket.OPEN
+
+  // Match browser WebSocket instances which expose these constants
+  CONNECTING = MockWebSocket.CONNECTING
+  OPEN = MockWebSocket.OPEN
+  CLOSING = MockWebSocket.CLOSING
+  CLOSED = MockWebSocket.CLOSED
+
   onopen: ((event: Event) => void) | null = null
   onclose: ((event: CloseEvent) => void) | null = null
   onmessage: ((event: MessageEvent) => void) | null = null

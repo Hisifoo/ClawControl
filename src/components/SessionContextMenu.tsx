@@ -5,12 +5,14 @@ interface Props {
   y: number
   sessionId?: string
   isSystemSession: boolean
+  isPinned: boolean
+  onTogglePin: () => void
   onRename: () => void
   onDelete: () => void
   onClose: () => void
 }
 
-export function SessionContextMenu({ x, y, isSystemSession, onRename, onDelete, onClose }: Props) {
+export function SessionContextMenu({ x, y, isSystemSession, isPinned, onTogglePin, onRename, onDelete, onClose }: Props) {
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Clamp position to viewport
@@ -85,6 +87,21 @@ export function SessionContextMenu({ x, y, isSystemSession, onRename, onDelete, 
           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
         </svg>
         <span>Rename</span>
+      {!isSystemSession && (
+        <div
+          className="context-menu-item"
+          onClick={(e) => {
+            e.stopPropagation()
+            onTogglePin()
+            onClose()
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 17l-5 3 1.5-5.5L4 10h5.5L12 4l2.5 6H20l-4.5 4.5L17 20z" />
+          </svg>
+          <span>{isPinned ? 'Unpin' : 'Pin'}</span>
+        </div>
+      )}
       </div>
       {!isSystemSession && (
         <>

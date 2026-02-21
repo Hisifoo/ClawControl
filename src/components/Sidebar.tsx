@@ -30,7 +30,9 @@ export function Sidebar() {
     unreadCounts,
     collapsedSessionGroups,
     toggleSessionGroup,
-    fetchSessions
+    fetchSessions,
+    pinnedSessionKeys,
+    togglePinSession
   } = useStore()
 
   const currentAgent = agents.find((a) => a.id === currentAgentId)
@@ -93,8 +95,24 @@ export function Sidebar() {
     )
   }, [visibleSessions, debouncedQuery])
 
-  // Group filtered sessions by date
-  const sessionGroups = useMemo(() => groupSessionsByDate(filteredSessions), [filteredSessions])
+  const pinnedKeyOrder = useMemo(() => {
+    const m = new Map<string, number>()
+    pinnedSessionKeys.forEach((k, i) => m.set(k, i))
+    return m
+  }, [pinnedSessionKeys])
+
+  const pinnedSessions = useMemo(() => {
+    return filteredSessions
+      .filter(s => pinnedKeyOrder.has(s.key || s.id))
+      .sort((a, b) => (pinnedKeyOrder.get(a.key || a.id) ?? 0) - (pinnedKeyOrder.get(b.key || b.id) ?? 0))
+  }, [filteredSessions, pinnedKeyOrder])
+
+  const unpinnedSessions = useMemo(() => {
+    return filteredSessions.filter(s => !pinnedKeyOrder.has(s.key || s.id))
+  }, [filteredSessions, pinnedKeyOrder])
+
+  // Group unpinned sessions by date
+  const sessionGroups = useMemo(() => groupSessionsByDate(unpinnedSessions), [unpinnedSessions])
 
   // Build agent lookup for emoji badges
   const agentMap = useMemo(() => {
@@ -243,6 +261,35 @@ export function Sidebar() {
           </div>
 
           <div className="sessions-list">
+            {pinnedSessions.length > 0 && (
+              <div className="session-group">
+                <div className="session-group-header" style={{ cursor: 'default' }}>
+                  <svg className="session-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 3l3 7h7l-5.5 4.1L18.8 21 12 16.9 5.2 21l2.3-6.9L2 10h7z" />
+                  </svg>
+                  <span className="session-group-label">Pinned</span>
+                  <span className="session-group-count">{pinnedSessions.length}</span>
+                </div>
+                <div className="session-group-items">
+                  {pinnedSessions.map((session) => (
+                    <SessionItem
+                      key={session.key || session.id}
+                      session={session}
+                      isActive={(session.key || session.id) === currentSessionId}
+                      isPinned={true}
+                      currentAgentId={currentAgentId}
+                      agentMap={agentMap}
+                      unreadCount={unreadCounts[session.key || session.id] || 0}
+                      onSelect={setCurrentSession}
+                      onContextMenu={handleContextMenu}
+                      onLongPress={handleLongPress}
+                      onDelete={deleteSession}
+                      onTogglePin={togglePinSession}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
             {sessionGroups.map((group) => {
               const isCollapsed = collapsedSessionGroups.includes(group.label)
               return (
@@ -270,6 +317,7 @@ export function Sidebar() {
                           key={session.key || session.id}
                           session={session}
                           isActive={(session.key || session.id) === currentSessionId}
+                          isPinned={pinnedKeyOrder.has(session.key || session.id)}
                           currentAgentId={currentAgentId}
                           agentMap={agentMap}
                           unreadCount={unreadCounts[session.key || session.id] || 0}
@@ -277,6 +325,7 @@ export function Sidebar() {
                           onContextMenu={handleContextMenu}
                           onLongPress={handleLongPress}
                           onDelete={deleteSession}
+                          onTogglePin={togglePinSession}
                         />
                       ))}
                     </div>
@@ -331,6 +380,8 @@ export function Sidebar() {
             y={contextMenu.y}
             sessionId={contextMenu.sessionId}
             isSystemSession={/^agent:[^:]+:(main|cron)(:|$)/.test(contextMenu.sessionId)}
+            isPinned={pinnedKeyOrder.has(contextMenu.sessionId)}
+            onTogglePin={() => togglePinSession(contextMenu.sessionId)}
             onRename={() => setShowRenameModal(true)}
             onDelete={() => {
               deleteSession(contextMenu.sessionId)
@@ -361,6 +412,20 @@ export function Sidebar() {
               </svg>
               <span>Rename Session</span>
             </div>
+            {!/^agent:[^:]+:(main|cron)(:|$)/.test(contextMenu.sessionId) && (
+              <div
+                className="context-menu-item"
+                onClick={() => {
+                  togglePinSession(contextMenu.sessionId)
+                  setContextMenu(null)
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 17l-5 3 1.5-5.5L4 10h5.5L12 4l2.5 6H20l-4.5 4.5L17 20z" />
+                </svg>
+                <span>{pinnedKeyOrder.has(contextMenu.sessionId) ? 'Unpin' : 'Pin'}</span>
+              </div>
+            )}
           </div>
         )
       )}
@@ -383,6 +448,7 @@ export function Sidebar() {
 function SessionItem({
   session,
   isActive,
+  isPinned,
   currentAgentId,
   agentMap,
   unreadCount,
@@ -390,9 +456,11 @@ function SessionItem({
   onContextMenu,
   onLongPress,
   onDelete,
+  onTogglePin,
 }: {
   session: Session
   isActive: boolean
+  isPinned: boolean
   currentAgentId: string | null
   agentMap: Map<string, Agent>
   unreadCount: number
@@ -400,6 +468,7 @@ function SessionItem({
   onContextMenu: (e: React.MouseEvent, sessionId: string, title: string) => void
   onLongPress: (sessionId: string, title: string, point: { clientX: number; clientY: number }) => void
   onDelete: (id: string) => void
+  onTogglePin: (id: string) => void
 }) {
   const sessionKey = session.key || session.id
   const sessionAgent = session.agentId && session.agentId !== currentAgentId
@@ -471,18 +540,33 @@ function SessionItem({
         <span className="session-badge">{unreadCount}</span>
       )}
       {!/^agent:[^:]+:(main|cron)(:|$)/.test(sessionKey) && (
-        <button
-          className="session-delete"
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete(sessionKey)
-          }}
-          aria-label="Delete session"
-        >
+        <>
+          <button
+            className={`session-pin ${isPinned ? 'pinned' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onTogglePin(sessionKey)
+            }}
+            aria-label={isPinned ? 'Unpin session' : 'Pin session'}
+            title={isPinned ? 'Unpin session' : 'Pin session'}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 17l-5 3 1.5-5.5L4 10h5.5L12 4l2.5 6H20l-4.5 4.5L17 20z" />
+            </svg>
+          </button>
+          <button
+            className="session-delete"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(sessionKey)
+            }}
+            aria-label="Delete session"
+          >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
+        </>
       )}
     </div>
   )
