@@ -5,6 +5,10 @@ export type SwipeDirection = 'left' | 'right'
 export interface SwipeCallbacks {
   onSwipeStart?: (direction: SwipeDirection) => void
   onSwipeMove?: (direction: SwipeDirection, progress: number) => void
+  /**
+   * completed=true: normal touchend (gesture finished)
+   * completed=false: cancelled/interrupted (touchcancel, multi-touch, etc)
+   */
   onSwipeEnd?: (direction: SwipeDirection, completed: boolean) => void
 }
 
@@ -27,6 +31,14 @@ export function useSwipeGesture(callbacks: SwipeCallbacks) {
   const touchState = useRef<TouchState | null>(null)
 
   useEffect(() => {
+    const endGesture = (completed: boolean) => {
+      const state = touchState.current
+      touchState.current = null
+
+      if (!state || state.cancelled || !state.locked || !state.direction) return
+      callbacksRef.current.onSwipeEnd?.(state.direction, completed)
+    }
+
     const handleTouchStart = (e: TouchEvent) => {
       // Ignore multi-touch
       if (e.touches.length > 1) {
@@ -64,7 +76,10 @@ export function useSwipeGesture(callbacks: SwipeCallbacks) {
       // Cancel on multi-touch
       if (e.touches.length > 1) {
         state.cancelled = true
-        callbacksRef.current.onSwipeEnd?.(state.direction || 'right', false)
+        // If we already started the gesture, ensure UI cleans up.
+        if (state.locked && state.direction) {
+          callbacksRef.current.onSwipeEnd?.(state.direction, false)
+        }
         touchState.current = null
         return
       }
@@ -99,26 +114,23 @@ export function useSwipeGesture(callbacks: SwipeCallbacks) {
     }
 
     const handleTouchEnd = () => {
-      const state = touchState.current
-      if (!state || state.cancelled || !state.locked || !state.direction) {
-        touchState.current = null
-        return
-      }
+      endGesture(true)
+    }
 
-      touchState.current = null
-      callbacksRef.current.onSwipeEnd?.(state.direction, true)
+    const handleTouchCancel = () => {
+      endGesture(false)
     }
 
     document.addEventListener('touchstart', handleTouchStart, { passive: true })
     document.addEventListener('touchmove', handleTouchMove, { passive: true })
     document.addEventListener('touchend', handleTouchEnd, { passive: true })
-    document.addEventListener('touchcancel', handleTouchEnd, { passive: true })
+    document.addEventListener('touchcancel', handleTouchCancel, { passive: true })
 
     return () => {
       document.removeEventListener('touchstart', handleTouchStart)
       document.removeEventListener('touchmove', handleTouchMove)
       document.removeEventListener('touchend', handleTouchEnd)
-      document.removeEventListener('touchcancel', handleTouchEnd)
+      document.removeEventListener('touchcancel', handleTouchCancel)
     }
   }, [])
 }

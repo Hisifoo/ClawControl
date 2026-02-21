@@ -2,6 +2,7 @@ import { useRef, useEffect, useMemo, Fragment, memo } from 'react'
 import { useStore, selectIsStreaming, selectHadStreamChunks, selectActiveToolCalls, ToolCall, SubagentInfo } from '../store'
 import { Message, stripAnsi } from '../lib/openclaw'
 import { resolveToolDisplay, extractToolDetail } from '../lib/openclaw/tool-display'
+import { openExternal } from '../lib/platform'
 import { ToolIcon } from './ToolIcon'
 import { SubagentBlock } from './SubagentBlock'
 import { format, isSameDay } from 'date-fns'
@@ -381,8 +382,25 @@ function MessageContent({ content, images }: { content: string; images?: Message
   useEffect(() => {
     const el = ref.current
     if (!el) return
+
     const handler = (e: MouseEvent) => {
-      const btn = (e.target as HTMLElement).closest('.code-copy-btn')
+      const target = e.target as HTMLElement
+
+      // External link handling: force http(s) links to OS default browser.
+      const anchor = target.closest('a') as HTMLAnchorElement | null
+      if (anchor) {
+        const href = anchor.getAttribute('href') || ''
+        if (href.startsWith('http://') || href.startsWith('https://')) {
+          e.preventDefault()
+          e.stopPropagation()
+          void openExternal(href)
+          return
+        }
+        // Allow internal routes (e.g. /foo) and other protocols to behave normally.
+      }
+
+      // Copy button handling for fenced code blocks
+      const btn = target.closest('.code-copy-btn')
       if (!btn) return
       const wrapper = btn.closest('.code-block-wrapper')
       const code = wrapper?.querySelector('code')
@@ -392,6 +410,7 @@ function MessageContent({ content, images }: { content: string; images?: Message
         setTimeout(() => btn.classList.remove('copied'), 2000)
       })
     }
+
     el.addEventListener('click', handler)
     return () => el.removeEventListener('click', handler)
   }, [html])

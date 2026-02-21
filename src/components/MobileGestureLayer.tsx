@@ -28,6 +28,11 @@ export function MobileGestureLayer({ children }: Props) {
   const gestureAction = useRef<string | null>(null)
   const gestureStartTime = useRef(0)
 
+  // requestAnimationFrame bookkeeping to avoid stale writes after swipe end/cancel
+  const rafIdRef = useRef<number | null>(null)
+  const gestureSessionRef = useRef(0)
+  const gestureActiveRef = useRef(false)
+
   const acquireRefs = useCallback(() => {
     if (!sidebarRef.current) {
       sidebarRef.current = document.querySelector('.sidebar')
@@ -48,6 +53,42 @@ export function MobileGestureLayer({ children }: Props) {
     el?.classList.remove('swiping')
   }, [])
 
+  const clearInlineStyles = useCallback((el: HTMLElement | null) => {
+    if (!el) return
+    el.style.transform = ''
+    el.style.opacity = ''
+    el.style.visibility = ''
+    el.style.pointerEvents = ''
+  }, [])
+
+  const cancelPendingRaf = useCallback(() => {
+    if (rafIdRef.current != null) {
+      cancelAnimationFrame(rafIdRef.current)
+      rafIdRef.current = null
+    }
+  }, [])
+
+  const cleanupSwipeVisuals = useCallback(() => {
+    const sidebar = sidebarRef.current
+    const rightPanel = rightPanelRef.current
+    const overlay = overlayRef.current
+
+    // Stop future/stale RAF callbacks from mutating styles
+    gestureActiveRef.current = false
+    gestureSessionRef.current += 1
+    cancelPendingRaf()
+
+    // Remove swiping class (re-enable CSS transitions)
+    removeSwipingClass(sidebar)
+    removeSwipingClass(rightPanel)
+    removeSwipingClass(overlay)
+
+    // Clear inline styles — let CSS classes/state own the final position
+    clearInlineStyles(sidebar)
+    clearInlineStyles(rightPanel)
+    clearInlineStyles(overlay)
+  }, [cancelPendingRaf, clearInlineStyles, removeSwipingClass])
+
   const resolveAction = useCallback((direction: SwipeDirection): string | null => {
     const state = useStore.getState()
 
@@ -66,6 +107,12 @@ export function MobileGestureLayer({ children }: Props) {
 
   const onSwipeStart = useCallback((direction: SwipeDirection) => {
     acquireRefs()
+
+    // New gesture session; invalidate any pending RAF from the previous gesture.
+    gestureActiveRef.current = true
+    gestureSessionRef.current += 1
+    cancelPendingRaf()
+
     const action = resolveAction(direction)
     gestureAction.current = action
     gestureStartTime.current = Date.now()
@@ -80,7 +127,7 @@ export function MobileGestureLayer({ children }: Props) {
       addSwipingClass(rightPanelRef.current)
       addSwipingClass(overlayRef.current)
     }
-  }, [acquireRefs, resolveAction, addSwipingClass])
+  }, [acquireRefs, resolveAction, addSwipingClass, cancelPendingRaf])
 
   const onSwipeMove = useCallback((_direction: SwipeDirection, progress: number) => {
     const action = gestureAction.current
@@ -88,7 +135,16 @@ export function MobileGestureLayer({ children }: Props) {
 
     const clampedProgress = Math.max(0, Math.min(1, progress))
 
-    requestAnimationFrame(() => {
+    // Only keep the latest move frame.
+    cancelPendingRaf()
+
+    const sessionAtSchedule = gestureSessionRef.current
+
+    rafIdRef.current = requestAnimationFrame(() => {
+      // Ignore stale RAF callbacks after end/cancel/new gesture.
+      if (!gestureActiveRef.current) return
+      if (sessionAtSchedule !== gestureSessionRef.current) return
+
       const sidebar = sidebarRef.current
       const rightPanel = rightPanelRef.current
       const overlay = overlayRef.current
@@ -140,15 +196,28 @@ export function MobileGestureLayer({ children }: Props) {
         // 'navigate-back' has no visual follow-through
       }
     })
-  }, [])
+  }, [cancelPendingRaf])
 
-  const onSwipeEnd = useCallback((_direction: SwipeDirection, _completed: boolean) => {
+  const onSwipeEnd = useCallback((_direction: SwipeDirection, completed: boolean) => {
     const action = gestureAction.current
-    if (!action) return
+
+    // Always cleanup visual state, even if we never resolved an action.
+    // (This ensures touchcancel/interruption doesn't leave panels half-open.)
+    if (!action) {
+      cleanupSwipeVisuals()
+      return
+    }
 
     const sidebar = sidebarRef.current
     const rightPanel = rightPanelRef.current
     const overlay = overlayRef.current
+
+    if (!completed) {
+      // Gesture was cancelled/interrupted: revert to class/state-driven layout.
+      cleanupSwipeVisuals()
+      gestureAction.current = null
+      return
+    }
 
     // Apply the target CSS class via DOM BEFORE clearing inline styles.
     // This prevents the panel from snapping back to its default off-screen
@@ -174,23 +243,7 @@ export function MobileGestureLayer({ children }: Props) {
         break
     }
 
-    // Remove swiping class (re-enable CSS transitions for snap animation)
-    removeSwipingClass(sidebar)
-    removeSwipingClass(rightPanel)
-    removeSwipingClass(overlay)
-
-    // Clear inline styles — CSS classes now handle final position
-    const clearInlineStyles = (el: HTMLElement | null) => {
-      if (!el) return
-      el.style.transform = ''
-      el.style.opacity = ''
-      el.style.visibility = ''
-      el.style.pointerEvents = ''
-    }
-
-    clearInlineStyles(sidebar)
-    clearInlineStyles(rightPanel)
-    clearInlineStyles(overlay)
+    cleanupSwipeVisuals()
 
     // Update React state to match the DOM classes we just set
     const store = useStore.getState()
@@ -213,7 +266,7 @@ export function MobileGestureLayer({ children }: Props) {
     }
 
     gestureAction.current = null
-  }, [removeSwipingClass])
+  }, [cleanupSwipeVisuals])
 
   useSwipeGesture({
     onSwipeStart,

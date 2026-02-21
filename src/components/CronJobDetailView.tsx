@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { openExternal } from '../lib/platform'
 import { useStore } from '../store'
 
 export function CronJobDetailView() {
@@ -112,7 +113,28 @@ export function CronJobDetailView() {
       <div className="detail-content">
         {selectedCronJob.content ? (
           <div className="markdown-content">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                a: ({ href, children, ...props }) => {
+                  const url = href || ''
+                  const isHttp = url.startsWith('http://') || url.startsWith('https://')
+                  return (
+                    <a
+                      {...props}
+                      href={href}
+                      onClick={(e) => {
+                        if (!isHttp) return
+                        e.preventDefault()
+                        void openExternal(url)
+                      }}
+                    >
+                      {children}
+                    </a>
+                  )
+                }
+              }}
+            >
               {selectedCronJob.content}
             </ReactMarkdown>
           </div>

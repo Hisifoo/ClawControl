@@ -3,6 +3,7 @@ import { OpenClawClient, Message, stripAnsi } from '../lib/openclaw'
 import { resolveToolDisplay, extractToolDetail } from '../lib/openclaw/tool-display'
 import { ToolIcon } from './ToolIcon'
 import { marked } from 'marked'
+import { openExternal } from '../lib/platform'
 
 marked.setOptions({ breaks: true, gfm: true, async: false })
 
@@ -221,11 +222,34 @@ function ViewerMessage({ message }: { message: Message }) {
 }
 
 function ViewerMarkdown({ content }: { content: string }) {
+  const ref = useRef<HTMLDivElement>(null)
   const html = useMemo(
     () => marked.parse(stripAnsi(content), { async: false }) as string,
     [content]
   )
-  return <div className="markdown-content" dangerouslySetInnerHTML={{ __html: html }} />
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      const anchor = target.closest('a') as HTMLAnchorElement | null
+      if (!anchor) return
+
+      const href = anchor.getAttribute('href') || ''
+      if (href.startsWith('http://') || href.startsWith('https://')) {
+        e.preventDefault()
+        e.stopPropagation()
+        void openExternal(href)
+      }
+    }
+
+    el.addEventListener('click', handler)
+    return () => el.removeEventListener('click', handler)
+  }, [html])
+
+  return <div className="markdown-content" ref={ref} dangerouslySetInnerHTML={{ __html: html }} />
 }
 
 function ViewerToolCall({ toolCall }: { toolCall: ToolCallInfo }) {
