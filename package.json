@@ -20,11 +20,11 @@
     "lint": "eslint .",
     "typecheck": "npx -p typescript tsc --noEmit",
     "mobile:build": "npx vite build --config vite.config.mobile.ts",
-    "mobile:sync": "npx vite build --config vite.config.mobile.ts && npx cap sync && npx @capacitor/assets generate --android --splashBackgroundColor '#06080a' --iconBackgroundColor '#06080a'",
-    "mobile:ios": "npx vite build --config vite.config.mobile.ts && npx cap sync ios && npx @capacitor/assets generate --ios --splashBackgroundColor '#06080a' --iconBackgroundColor '#06080a' && node scripts/fix-ios-splash.js && npx cap open ios",
-    "mobile:android": "npx vite build --config vite.config.mobile.ts && npx cap sync android && npx @capacitor/assets generate --android --splashBackgroundColor '#06080a' --iconBackgroundColor '#06080a' && npx cap open android",
+    "mobile:sync": "npx vite build --config vite.config.mobile.ts && npx cap sync && npx @capacitor/assets generate --android --splashBackgroundColor \"#06080a\" --iconBackgroundColor \"#06080a\" && node scripts/fix-android-edge-to-edge.js",
+    "mobile:ios": "npx vite build --config vite.config.mobile.ts && npx cap sync ios && npx @capacitor/assets generate --ios --splashBackgroundColor \"#06080a\" --iconBackgroundColor \"#06080a\" && node scripts/fix-ios-splash.js && npx cap open ios",
+    "mobile:android": "npx vite build --config vite.config.mobile.ts && npx cap sync android && npx @capacitor/assets generate --android --splashBackgroundColor \"#06080a\" --iconBackgroundColor \"#06080a\" && node scripts/fix-android-edge-to-edge.js && npx cap open android",
     "mobile:dev": "npx vite --config vite.config.mobile.ts",
-    "mobile:assets": "npx @capacitor/assets generate --android --ios --splashBackgroundColor '#06080a' --iconBackgroundColor '#06080a'"
+    "mobile:assets": "npx @capacitor/assets generate --android --ios --splashBackgroundColor \"#06080a\" --iconBackgroundColor \"#06080a\""
   },
   "dependencies": {
     "@capacitor-community/speech-recognition": "^7.0.1",
