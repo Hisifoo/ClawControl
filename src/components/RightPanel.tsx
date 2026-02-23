@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useStore } from '../store'
-import { Skill, CronJob } from '../lib/openclaw'
+import { Skill, CronJob, Hook } from '../lib/openclaw'
 import type { ClawHubSkill, ClawHubSort } from '../lib/clawhub'
 
 /** Check if a ClawHub slug matches any installed skill */
@@ -21,14 +21,21 @@ export function RightPanel() {
   const {
     rightPanelOpen,
     setRightPanelOpen,
+    rightPanelWidth,
+    setRightPanelWidth,
     rightPanelTab,
     setRightPanelTab,
     skills,
     cronJobs,
     selectSkill,
     selectCronJob,
+    selectHook,
     selectedSkill,
     selectedCronJob,
+    selectedHook,
+    hooks,
+    hooksConfig,
+    toggleInternalHooksEnabled,
     skillsSubTab,
     setSkillsSubTab,
     clawHubSkills,
@@ -39,6 +46,39 @@ export function RightPanel() {
     selectClawHubSkill,
     selectedClawHubSkill
   } = useStore()
+
+  const resizing = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(0)
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    resizing.current = true
+    startX.current = e.clientX
+    startWidth.current = rightPanelWidth
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [rightPanelWidth])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizing.current) return
+      const delta = startX.current - e.clientX
+      setRightPanelWidth(startWidth.current + delta)
+    }
+    const handleMouseUp = () => {
+      if (!resizing.current) return
+      resizing.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [setRightPanelWidth])
 
   const [searchQuery, setSearchQuery] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -55,6 +95,12 @@ export function RightPanel() {
       job.schedule.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const filteredHooks = hooks.filter(
+    (hook) =>
+      hook.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (hook.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   // Debounced search for ClawHub
   useEffect(() => {
     if (rightPanelTab !== 'skills' || skillsSubTab !== 'available') return
@@ -68,7 +114,14 @@ export function RightPanel() {
   }, [searchQuery, skillsSubTab, rightPanelTab, searchClawHubSkills])
 
   return (
-    <aside className={`right-panel ${rightPanelOpen ? 'visible' : 'hidden'}`}>
+    <aside
+      className={`right-panel ${rightPanelOpen ? 'visible' : 'hidden'}`}
+      style={{ width: rightPanelWidth }}
+    >
+      <div
+        className="panel-resize-handle"
+        onMouseDown={handleResizeStart}
+      />
       <div className="panel-header">
         <div className="panel-tabs">
           <button
@@ -82,6 +135,12 @@ export function RightPanel() {
             onClick={() => setRightPanelTab('crons')}
           >
             Cron Jobs
+          </button>
+          <button
+            className={`panel-tab ${rightPanelTab === 'hooks' ? 'active' : ''}`}
+            onClick={() => setRightPanelTab('hooks')}
+          >
+            Hooks
           </button>
         </div>
         <button
@@ -108,7 +167,40 @@ export function RightPanel() {
         />
       </div>
 
-      {rightPanelTab === 'skills' ? (
+      {rightPanelTab === 'hooks' ? (
+        <div className="panel-content">
+          <div className="hooks-master-toggle" style={{ padding: '8px 16px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '13px', opacity: 0.7 }}>Internal Hooks</span>
+            <button
+              className={`toggle-button small ${hooksConfig.internal?.enabled !== false ? 'active' : ''}`}
+              onClick={() => toggleInternalHooksEnabled(hooksConfig.internal?.enabled === false)}
+              aria-label="Toggle internal hooks"
+            >
+              <span className="toggle-track">
+                <span className="toggle-thumb" />
+              </span>
+            </button>
+          </div>
+          {filteredHooks.length > 0 ? (
+            filteredHooks.map((hook, index) => (
+              <HookItem
+                key={hook.id || index}
+                hook={hook}
+                isSelected={selectedHook?.id === hook.id}
+                onClick={() => selectHook(hook)}
+              />
+            ))
+          ) : (
+            <div className="empty-panel">
+              <p>No hooks configured</p>
+              <p style={{ fontSize: '12px', opacity: 0.6, marginTop: '8px' }}>
+                Hooks are auto-discovered from workspace, managed, and bundled directories.
+                Configure entries in your server config to manage them here.
+              </p>
+            </div>
+          )}
+        </div>
+      ) : rightPanelTab === 'skills' ? (
         <>
           <div className="skills-sub-tabs">
             <button
@@ -314,6 +406,55 @@ function formatCount(n: number): string {
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
   return String(n)
+}
+
+interface HookItemProps {
+  hook: Hook
+  isSelected: boolean
+  onClick: () => void
+}
+
+function HookItem({ hook, isSelected, onClick }: HookItemProps) {
+  return (
+    <div
+      className={`hook-item clickable ${isSelected ? 'selected' : ''}`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+    >
+      <div className="hook-header">
+        <div className="hook-icon">
+          {hook.emoji ? (
+            <span className="hook-emoji">{hook.emoji}</span>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+          )}
+        </div>
+        <div className={`hook-status ${hook.enabled ? 'enabled' : 'disabled'}`}>
+          {hook.enabled ? 'Enabled' : 'Disabled'}
+        </div>
+      </div>
+      <div className="hook-content">
+        <div className="hook-name">{hook.name}</div>
+        {hook.description && (
+          <div className="hook-description">{hook.description}</div>
+        )}
+        {hook.events && hook.events.length > 0 && (
+          <div className="hook-events">
+            {hook.events.map((event, index) => (
+              <span key={event || index} className="trigger-badge">
+                {event}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 interface CronJobItemProps {

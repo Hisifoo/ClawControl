@@ -2243,6 +2243,22 @@ a {
   transition: transform var(--transition-normal), opacity var(--transition-normal);
   position: relative;
   z-index: 100;
+  flex-shrink: 0;
+}
+
+.panel-resize-handle {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.panel-resize-handle:hover {
+  background: var(--accent-cyan);
+  opacity: 0.3;
 }
 
 .right-panel.hidden {
@@ -2502,14 +2518,111 @@ a {
   height: 16px;
 }
 
-/* Skill/Cron Item States */
+/* Hooks */
+.hook-item {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-md);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
+  transition: all var(--transition-fast);
+}
+
+.hook-item:hover {
+  border-color: var(--accent-cyan);
+  transform: translateX(4px);
+}
+
+.hook-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.hook-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-cyan-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+}
+
+.hook-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.hook-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.hook-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.hook-name {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.hook-description {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.hook-events {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.hook-status {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.hook-status.enabled {
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 15%, transparent);
+}
+
+.hook-status.disabled {
+  color: var(--text-muted);
+  background: var(--bg-hover);
+}
+
+.hooks-master-toggle {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Skill/Cron/Hook Item States */
 .skill-item.clickable,
-.cron-item.clickable {
+.cron-item.clickable,
+.hook-item.clickable {
   cursor: pointer;
 }
 
 .skill-item.selected,
-.cron-item.selected {
+.cron-item.selected,
+.hook-item.selected {
   border-color: var(--accent-cyan);
   background: var(--accent-cyan-subtle);
 }

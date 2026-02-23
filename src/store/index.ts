@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { OpenClawClient, Message, Session, Agent, Skill, CronJob, AgentFile, CreateAgentParams, buildIdentityContent } from '../lib/openclaw'
+import { OpenClawClient, Message, Session, Agent, Skill, CronJob, Hook, HooksConfig, AgentFile, CreateAgentParams, buildIdentityContent } from '../lib/openclaw'
 import type { ClawHubSkill, ClawHubSort } from '../lib/clawhub'
 import { listClawHubSkills, searchClawHub, getClawHubSkill, getClawHubSkillVersion, getClawHubSkillConvex } from '../lib/clawhub'
 import * as Platform from '../lib/platform'
@@ -81,14 +81,17 @@ interface AppState {
   toggleSessionGroup: (label: string) => void
   rightPanelOpen: boolean
   setRightPanelOpen: (open: boolean) => void
-  rightPanelTab: 'skills' | 'crons'
-  setRightPanelTab: (tab: 'skills' | 'crons') => void
+  rightPanelWidth: number
+  setRightPanelWidth: (width: number) => void
+  rightPanelTab: 'skills' | 'crons' | 'hooks'
+  setRightPanelTab: (tab: 'skills' | 'crons' | 'hooks') => void
 
   // Main View State
-  mainView: 'chat' | 'skill-detail' | 'cron-detail' | 'create-cron' | 'agent-detail' | 'create-agent' | 'clawhub-skill-detail' | 'server-settings' | 'usage' | 'pixel-dashboard'
-  setMainView: (view: 'chat' | 'skill-detail' | 'cron-detail' | 'create-cron' | 'agent-detail' | 'create-agent' | 'clawhub-skill-detail' | 'usage') => void
+  mainView: 'chat' | 'skill-detail' | 'cron-detail' | 'create-cron' | 'agent-detail' | 'create-agent' | 'clawhub-skill-detail' | 'server-settings' | 'usage' | 'pixel-dashboard' | 'hook-detail'
+  setMainView: (view: 'chat' | 'skill-detail' | 'cron-detail' | 'create-cron' | 'agent-detail' | 'create-agent' | 'clawhub-skill-detail' | 'usage' | 'hook-detail') => void
   selectedSkill: Skill | null
   selectedCronJob: CronJob | null
+  selectedHook: Hook | null
   selectedAgentDetail: AgentDetail | null
   selectSkill: (skill: Skill) => Promise<void>
   selectCronJob: (cronJob: CronJob) => Promise<void>
@@ -140,9 +143,14 @@ interface AppState {
   createAgent: (params: CreateAgentParams) => Promise<{ success: boolean; error?: string }>
   deleteAgent: (agentId: string) => Promise<{ success: boolean; error?: string }>
 
-  // Skills & Crons
+  // Skills, Crons & Hooks
   skills: Skill[]
   cronJobs: CronJob[]
+  hooks: Hook[]
+  hooksConfig: HooksConfig
+  selectHook: (hook: Hook) => void
+  toggleHookEnabled: (hookId: string, enabled: boolean) => Promise<void>
+  toggleInternalHooksEnabled: (enabled: boolean) => Promise<void>
 
   // ClawHub
   clawHubSkills: ClawHubSkill[]
@@ -178,6 +186,7 @@ interface AppState {
   fetchAgents: () => Promise<void>
   fetchSkills: () => Promise<void>
   fetchCronJobs: () => Promise<void>
+  fetchHooks: () => Promise<void>
 }
 
 // Module-level polling state (not persisted)
@@ -306,6 +315,8 @@ export const useStore = create<AppState>()(
       }),
       rightPanelOpen: !Platform.isMobile(),
       setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
+      rightPanelWidth: 320,
+      setRightPanelWidth: (width) => set({ rightPanelWidth: Math.max(240, Math.min(600, width)) }),
       rightPanelTab: 'skills',
       setRightPanelTab: (tab) => set({ rightPanelTab: tab }),
 
@@ -314,14 +325,15 @@ export const useStore = create<AppState>()(
       setMainView: (view) => set({ mainView: view }),
       selectedSkill: null,
       selectedCronJob: null,
+      selectedHook: null,
       selectedAgentDetail: null,
       selectSkill: async (skill) => {
         // All skill data comes from skills.status, no need for separate fetch
-        set({ mainView: 'skill-detail', selectedSkill: skill, selectedCronJob: null, selectedAgentDetail: null })
+        set({ mainView: 'skill-detail', selectedSkill: skill, selectedCronJob: null, selectedHook: null, selectedAgentDetail: null })
       },
       selectCronJob: async (cronJob) => {
         const { client } = get()
-        set({ mainView: 'cron-detail', selectedCronJob: cronJob, selectedSkill: null, selectedAgentDetail: null })
+        set({ mainView: 'cron-detail', selectedCronJob: cronJob, selectedSkill: null, selectedHook: null, selectedAgentDetail: null })
 
         // Fetch full cron job details including content
         if (client) {
@@ -333,7 +345,7 @@ export const useStore = create<AppState>()(
       },
       selectAgentForDetail: async (agent) => {
         const { client } = get()
-        set({ mainView: 'agent-detail', selectedAgentDetail: { agent, workspace: '', files: [] }, selectedSkill: null, selectedCronJob: null })
+        set({ mainView: 'agent-detail', selectedAgentDetail: { agent, workspace: '', files: [] }, selectedSkill: null, selectedCronJob: null, selectedHook: null })
 
         if (client) {
           // Fetch workspace files and server config (for default model) in parallel
@@ -388,11 +400,11 @@ export const useStore = create<AppState>()(
           }
         }
       },
-      openServerSettings: () => set({ mainView: 'server-settings', selectedSkill: null, selectedCronJob: null, selectedAgentDetail: null, selectedClawHubSkill: null }),
-      openUsage: () => set({ mainView: 'usage', selectedSkill: null, selectedCronJob: null, selectedAgentDetail: null, selectedClawHubSkill: null }),
-      openCreateCron: () => set({ mainView: 'create-cron', selectedSkill: null, selectedCronJob: null, selectedAgentDetail: null, selectedClawHubSkill: null }),
-      openDashboard: () => set({ mainView: 'pixel-dashboard', selectedSkill: null, selectedCronJob: null, selectedAgentDetail: null, selectedClawHubSkill: null }),
-      closeDetailView: () => set({ mainView: 'chat', selectedSkill: null, selectedCronJob: null, selectedAgentDetail: null, selectedClawHubSkill: null }),
+      openServerSettings: () => set({ mainView: 'server-settings', selectedSkill: null, selectedCronJob: null, selectedHook: null, selectedAgentDetail: null, selectedClawHubSkill: null }),
+      openUsage: () => set({ mainView: 'usage', selectedSkill: null, selectedCronJob: null, selectedHook: null, selectedAgentDetail: null, selectedClawHubSkill: null }),
+      openCreateCron: () => set({ mainView: 'create-cron', selectedSkill: null, selectedCronJob: null, selectedHook: null, selectedAgentDetail: null, selectedClawHubSkill: null }),
+      openDashboard: () => set({ mainView: 'pixel-dashboard', selectedSkill: null, selectedCronJob: null, selectedHook: null, selectedAgentDetail: null, selectedClawHubSkill: null }),
+      closeDetailView: () => set({ mainView: 'chat', selectedSkill: null, selectedCronJob: null, selectedHook: null, selectedAgentDetail: null, selectedClawHubSkill: null }),
       toggleSkillEnabled: async (skillId, enabled) => {
         const { client } = get()
         if (!client) return
@@ -723,7 +735,7 @@ export const useStore = create<AppState>()(
         const agentUpdate = session?.agentId && session.agentId !== get().currentAgentId
           ? { currentAgentId: session.agentId } : {}
 
-        set({ currentSessionId: sessionId, messages: cachedMessages, activeSubagents: [], unreadCounts: restCounts, mainView: 'chat', selectedSkill: null, selectedCronJob: null, selectedAgentDetail: null, selectedClawHubSkill: null, ...agentUpdate })
+        set({ currentSessionId: sessionId, messages: cachedMessages, activeSubagents: [], unreadCounts: restCounts, mainView: 'chat', selectedSkill: null, selectedCronJob: null, selectedHook: null, selectedAgentDetail: null, selectedClawHubSkill: null, ...agentUpdate })
         // Load fresh messages from server. Guard against stale loads when the
         // user rapidly switches sessions.
         client?.getSessionMessages(sessionId).then((historyResult) => {
@@ -853,7 +865,7 @@ export const useStore = create<AppState>()(
           }).catch(() => { })
         }
       },
-      showCreateAgent: () => set({ mainView: 'create-agent', selectedSkill: null, selectedCronJob: null, selectedAgentDetail: null }),
+      showCreateAgent: () => set({ mainView: 'create-agent', selectedSkill: null, selectedCronJob: null, selectedHook: null, selectedAgentDetail: null }),
       createAgent: async (params) => {
         const { client } = get()
         if (!client) return { success: false, error: 'Not connected' }
@@ -998,9 +1010,65 @@ export const useStore = create<AppState>()(
         }
       },
 
-      // Skills & Crons
+      // Skills, Crons & Hooks
       skills: [],
       cronJobs: [],
+      hooks: [],
+      hooksConfig: {},
+      selectHook: (hook) => {
+        set({ mainView: 'hook-detail', selectedHook: hook, selectedSkill: null, selectedCronJob: null, selectedAgentDetail: null, selectedClawHubSkill: null })
+      },
+      toggleHookEnabled: async (hookId, enabled) => {
+        const { client } = get()
+        if (!client) return
+
+        // Optimistic update
+        set((state) => ({
+          hooks: state.hooks.map(h => h.id === hookId ? { ...h, enabled } : h),
+          selectedHook: state.selectedHook?.id === hookId ? { ...state.selectedHook, enabled } : state.selectedHook
+        }))
+
+        try {
+          await client.toggleHookEnabled(hookId, enabled)
+          // config.patch triggers server restart — refetch after reconnect
+          await new Promise<void>((resolve) => {
+            let resolved = false
+            const onConnected = () => { if (!resolved) { resolved = true; client.off('connected', onConnected); resolve() } }
+            client.on('connected', onConnected)
+            setTimeout(onConnected, 5000)
+          })
+          await get().fetchHooks()
+        } catch {
+          // Revert optimistic update
+          set((state) => ({
+            hooks: state.hooks.map(h => h.id === hookId ? { ...h, enabled: !enabled } : h),
+            selectedHook: state.selectedHook?.id === hookId ? { ...state.selectedHook, enabled: !enabled } : state.selectedHook
+          }))
+        }
+      },
+      toggleInternalHooksEnabled: async (enabled) => {
+        const { client } = get()
+        if (!client) return
+
+        set((state) => ({
+          hooksConfig: { ...state.hooksConfig, internal: { ...state.hooksConfig.internal, enabled } }
+        }))
+
+        try {
+          await client.toggleInternalHooksEnabled(enabled)
+          await new Promise<void>((resolve) => {
+            let resolved = false
+            const onConnected = () => { if (!resolved) { resolved = true; client.off('connected', onConnected); resolve() } }
+            client.on('connected', onConnected)
+            setTimeout(onConnected, 5000)
+          })
+          await get().fetchHooks()
+        } catch {
+          set((state) => ({
+            hooksConfig: { ...state.hooksConfig, internal: { ...state.hooksConfig.internal, enabled: !enabled } }
+          }))
+        }
+      },
 
       // ClawHub
       clawHubSkills: [],
@@ -1060,7 +1128,7 @@ export const useStore = create<AppState>()(
         get().fetchClawHubSkills()
       },
       selectClawHubSkill: (skill) => {
-        set({ mainView: 'clawhub-skill-detail', selectedClawHubSkill: skill, selectedSkill: null, selectedCronJob: null, selectedAgentDetail: null })
+        set({ mainView: 'clawhub-skill-detail', selectedClawHubSkill: skill, selectedSkill: null, selectedCronJob: null, selectedHook: null, selectedAgentDetail: null })
       },
       installClawHubSkill: async (slug) => {
         set({ installingHubSkill: slug, installHubSkillError: null })
@@ -1719,7 +1787,8 @@ export const useStore = create<AppState>()(
             get().fetchSessions(),
             get().fetchAgents(),
             get().fetchSkills(),
-            get().fetchCronJobs()
+            get().fetchCronJobs(),
+            get().fetchHooks()
           ])
         } catch (err) {
           const errMsg = err instanceof Error ? err.message : ''
@@ -1929,6 +1998,13 @@ export const useStore = create<AppState>()(
         if (!client) return
         const cronJobs = await client.listCronJobs()
         set({ cronJobs })
+      },
+
+      fetchHooks: async () => {
+        const { client } = get()
+        if (!client) return
+        const { hooks, hooksConfig } = await client.fetchHooks()
+        set({ hooks, hooksConfig })
       }
     }),
     {
@@ -1941,7 +2017,8 @@ export const useStore = create<AppState>()(
         sidebarCollapsed: state.sidebarCollapsed,
         collapsedSessionGroups: state.collapsedSessionGroups,
         thinkingEnabled: state.thinkingEnabled,
-        notificationsEnabled: state.notificationsEnabled
+        notificationsEnabled: state.notificationsEnabled,
+        rightPanelWidth: state.rightPanelWidth
       })
     }
   )

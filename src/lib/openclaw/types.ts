@@ -137,6 +137,46 @@ export interface CronJob {
   enabled?: boolean
 }
 
+// Hook types (internal hooks from server config)
+export interface Hook {
+  id: string
+  name: string
+  enabled: boolean
+  events?: string[]
+  description?: string
+  emoji?: string
+  source?: 'bundled' | 'workspace' | 'managed'
+  filePath?: string
+  env?: Record<string, string>
+  always?: boolean
+  eligible?: boolean
+  requirements?: SkillRequirements
+  missing?: SkillRequirements
+}
+
+// Top-level hooks config (for master toggles / HTTP hooks)
+export interface HooksConfig {
+  enabled?: boolean
+  path?: string
+  token?: string
+  defaultSessionKey?: string
+  internal?: {
+    enabled?: boolean
+    entries?: Record<string, { enabled?: boolean; env?: Record<string, string>; [key: string]: unknown }>
+  }
+  mappings?: HookMapping[]
+}
+
+export interface HookMapping {
+  id?: string
+  match?: { path?: string; source?: string }
+  action?: 'wake' | 'agent'
+  name?: string
+  agentId?: string
+  channel?: string
+  to?: string
+}
+
 export interface RequestFrame {
   type: 'req'
   id: string

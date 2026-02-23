@@ -13,6 +13,7 @@ import { CreateCronJobView } from './components/CreateCronJobView'
 import { AgentDetailView } from './components/AgentDetailView'
 import { CreateAgentView } from './components/CreateAgentView'
 import { ClawHubSkillDetailView } from './components/ClawHubSkillDetailView'
+import { HookDetailView } from './components/HookDetailView'
 import { ServerSettingsView } from './components/ServerSettingsView'
 import { UsageView } from './components/UsageView'
 import { AgentDashboard } from './components/AgentDashboard'
@@ -120,6 +121,7 @@ function App() {
         {mainView === 'agent-detail' && <AgentDetailView />}
         {mainView === 'create-agent' && <CreateAgentView />}
         {mainView === 'clawhub-skill-detail' && <ClawHubSkillDetailView />}
+        {mainView === 'hook-detail' && <HookDetailView />}
         {mainView === 'server-settings' && <ServerSettingsView />}
         {mainView === 'usage' && <UsageView />}
         {mainView === 'pixel-dashboard' && <AgentDashboard />}

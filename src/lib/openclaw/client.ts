@@ -14,6 +14,7 @@ import * as agentsApi from './agents'
 import * as skillsApi from './skills'
 import * as cronApi from './cron-jobs'
 import * as configApi from './config'
+import * as hooksApi from './hooks'
 import * as featuresApi from './features'
 
 /** Matches internal system sessions that should never be treated as subagents. */
@@ -918,6 +919,23 @@ export class OpenClawClient {
   }
   async runCronJob(id: string): Promise<void> {
     return cronApi.runCronJob(this.call.bind(this), id)
+  }
+
+  // Hooks (config-based)
+  async fetchHooks(): Promise<hooksApi.HooksState> {
+    return hooksApi.fetchHooks(this.call.bind(this))
+  }
+
+  async toggleHookEnabled(hookId: string, enabled: boolean): Promise<void> {
+    return hooksApi.toggleHookEnabled(this.call.bind(this), hookId, enabled)
+  }
+
+  async toggleInternalHooksEnabled(enabled: boolean): Promise<void> {
+    return hooksApi.toggleInternalHooksEnabled(this.call.bind(this), enabled)
+  }
+
+  async updateHookEnv(hookId: string, env: Record<string, string>): Promise<void> {
+    return hooksApi.updateHookEnv(this.call.bind(this), hookId, env)
   }
 
   // Features
