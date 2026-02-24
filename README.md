@@ -2,29 +2,33 @@
 
 A cross-platform desktop and mobile client for OpenClaw AI assistant. Built with Electron, React, and TypeScript.
 
-> **Latest Release: [v1.2.0](https://github.com/jakeledwards/ClawControl/releases/tag/v1.2.0)** — Download the [installer](https://github.com/jakeledwards/ClawControl/releases/download/v1.2.0/ClawControl.Setup.1.2.0.exe) or [portable exe](https://github.com/jakeledwards/ClawControl/releases/download/v1.2.0/ClawControl.1.2.0.exe) for Windows.
+> **Latest Release: [v1.3.1](https://github.com/jakeledwards/ClawControl/releases/tag/v1.3.1)** — Download the [DMG](https://github.com/jakeledwards/ClawControl/releases/download/v1.3.1/ClawControl-1.3.1-arm64.dmg) for macOS or the [ZIP](https://github.com/jakeledwards/ClawControl/releases/download/v1.3.1/ClawControl-1.3.1-arm64-mac.zip).
 
 ## Features
 
 - **Concurrent Agent Streaming**: Talk to multiple agents simultaneously with per-session stream isolation
 - **Chat Interface**: Clean, modern chat UI with streaming support, markdown rendering, and code block copy buttons
+- **Image Send/Receive**: Attach and send images in chat (PNG, JPG, GIF, WebP) with inline preview and gallery display
+- **Voice Dictation**: Microphone button for speech-to-text input via WebSpeech API (browser) or native speech recognition (iOS/Android)
+- **Wake-Word Detection**: Continuous voice monitoring with configurable trigger phrases — auto-starts dictation hands-free
 - **Thinking Mode**: Toggle extended thinking for complex tasks with visible reasoning display
 - **Agent Selection**: Switch between different AI agents with per-session agent identity
 - **Agent Management**: Create, rename, delete, and browse agent profiles, configuration, and workspace files
 - **Agent Dashboard**: Live activity grid showing all agents with real-time status
 - **Sessions Management**: Create, view, and manage chat sessions with message caching and unread indicators
+- **Pinned Sessions**: Pin important sessions to the top of the sidebar for quick access
 - **Subagent Spawning**: Spawn isolated subagent sessions for parallel task execution, with inline status blocks and popout windows
 - **ClawHub Skill Browser**: Search and browse available skills with VirusTotal security scan badges, download stats, and one-click install
 - **Rich Tool Call Cards**: See tool calls inline during chat with per-tool icons, detail text, and popout viewer
 - **Stop Button**: Abort in-progress chat streams at any time
 - **Server Settings**: Full-page editor for OpenClaw server configuration — agent defaults, tools & memory, features (TTS & VoiceWake) and channel settings with dirty tracking and conflict detection
-- **Usage View**: Monitor the server limits, resources, and usage cost estimates
+- **Usage View**: Monitor server limits, resources, and usage cost estimates with daily cost tracking, token/cost charts, and activity heatmaps
 - **Device Pairing**: Ed25519 device identity with pairing code display, copy/share buttons, and auto-recovery from stale identity
 - **Cron Jobs**: View, create, manually run, delete, and manage scheduled tasks with live status updates
 - **Dark/Light Theme**: Full theme support with system preference detection
 - **Mobile Gestures**: Swipe-to-delete sessions and long-press context menus on mobile
 - **Auto-Retry Connection**: Automatic reconnection with WebSocket health checks for half-open connection detection
-- **Cross-Platform**: Windows, macOS, iOS, and Android support via Electron and Capacitor
+- **Cross-Platform**: Windows, macOS, Linux, iOS, and Android support via Electron and Capacitor
 
 ## Screenshots
 
@@ -70,46 +74,39 @@ A cross-platform desktop and mobile client for OpenClaw AI assistant. Built with
 
 ## Download
 
-Pre-built Windows binaries are available on the [Releases](https://github.com/jakeledwards/ClawControl/releases) page:
+Pre-built binaries are available on the [Releases](https://github.com/jakeledwards/ClawControl/releases) page:
 
-- **ClawControl Setup 1.2.0.exe** — Windows installer
-- **ClawControl 1.2.0.exe** — Portable executable (no installation required)
+- **ClawControl-1.3.1-arm64.dmg** — macOS installer (Apple Silicon)
+- **ClawControl-1.3.1-arm64-mac.zip** — macOS portable (Apple Silicon)
 
-### What's New in v1.2.0
+### What's New in v1.3.1
 
 **Major Features**
-- Full-page server settings editor — configure agent defaults, tools & memory, and channels with dirty tracking and hash-based conflict detection
-- Agent dashboard with live activity grid view
-- Rich tool call cards in chat with per-tool icons, detail text, history support, and popout viewer
-- Per-session stream isolation for true concurrent multi-agent conversations
-- Ed25519 device identity with pairing code display, copy/share, and auto-recovery from stale identity
-- Agent rename support
-- Session message caching and auto-switch agent on session click
+- Image send/receive support in chat — attach PNG, JPG, GIF, or WebP images with inline preview
+- Wake-word-triggered voice dictation with configurable trigger phrases and composer voice UI
+- Usage charts view — daily cost tracking, token/cost bar charts, and activity heatmaps
+- Pinned sessions — pin conversations to the top of the sidebar for quick access
+- Cron job creation UI — create scheduled tasks directly from the app
+- Linux packaging — AppImage and .deb targets
 
-**Mobile**
-- Native Capacitor WebSocket plugin for iOS TLS certificate handling
-- Swipe-to-delete sessions and long-press context menus
-- Compact mobile-optimized layouts and iOS viewport stability fixes
-- Mobile splash screen support with programmatic hide
+**Security & Auth**
+- Removed insecure auth mode in favor of Ed25519 device identity pairing
+- Device name setting for identifying connections
 
-**Connection & Reliability**
-- Auto-retry connection with configurable behavior
-- WebSocket health checks to detect half-open connections
-- Auto-reconnect on send failure with error display
-- Fix for WebSocket reconnect dying silently after 5 retries
-- Device pairing + scoped RBAC handshake (Ed25519 device identity)
-- Collapsible connection settings that auto-collapse when connected
+**Mobile & Platform**
+- iOS native WebSocket Origin header support
+- Open http(s)/mailto/tel links in OS handler on mobile
+- Fix mobile swipe cleanup
 
 **Fixes**
-- Fix agent switching not routing messages to the selected agent
-- Fix operator scope handshake for OpenClaw 2026.2.12
-- Fix false cert error detection on iOS WebSocket failures
-- Handle chat error events and fix stale stream state
-- Hide subagent and nested system sessions from sidebar
-- Fix settings modal overflow on desktop
-- Improved subagent filtering, TopBar session names, and metadata stripping
+- Fix iOS native WebSocket plugin registration
+- Use `https://` origin for Capacitor instead of `capacitor://`
+- Fix client ID for new server schema and add origin error help
+- Fix tool calls rendering in own bubble above message text
+- Fix iOS splash screen scale variant conflicts
+- Connection error surfacing in UI
 
-See the full [release notes](https://github.com/jakeledwards/ClawControl/releases/tag/v1.2.0) for details.
+See the full [release notes](https://github.com/jakeledwards/ClawControl/releases/tag/v1.3.1) for details.
 
 ## Installation (from source)
 
@@ -135,8 +132,8 @@ The app connects to your local OpenClaw instance. Default configuration:
 1. Make sure your OpenClaw server is running on your local network.
 2. In the app, open **Settings** (gear icon).
 3. Set **Server URL** to your local WebSocket endpoint (for example: `ws://192.168.1.50:8080`).
-4. If your server requires auth, set **Authentication Mode** and enter your **Gateway Token/Password**.
-5. Click **Save & Connect**.
+4. Click **Save & Connect**.
+5. On first connect, approve the device pairing request on the server.
 
 ### Connecting Through Tailscale
 
@@ -146,8 +143,8 @@ You must be connected to Tailscale before the app can reach your OpenClaw server
 2. Get your server's Tailscale hostname or IP.
 3. In the app, open **Settings** (gear icon).
 4. Set **Server URL** to your Tailscale endpoint (for example: `wss://your-server.tailnet-123.ts.net`).
-5. If your server requires auth, set **Authentication Mode** and enter your **Gateway Token/Password**.
-6. Click **Save & Connect**.
+5. Click **Save & Connect**.
+6. On first connect, approve the device pairing request on the server.
 
 ### Settings Management
 
@@ -157,8 +154,8 @@ You can configure the connection details directly in the application by clicking
 1.  **Server URL**: The WebSocket URL of your OpenClaw instance.
     - **Validation**: Must start with `ws://` (insecure) or `wss://` (secure).
     - **Example**: `wss://your-server.local` or `ws://localhost:8080`
-2.  **Authentication Mode**: Toggle between Token and Password authentication.
-3.  **Gateway Token/Password**: The credential for your OpenClaw instance (if enabled).
+2.  **Device Name**: A friendly name for your device (shown on the server).
+3.  **Device Identity**: Ed25519 keypair generated automatically for pairing.
 
 Settings are automatically persisted between sessions. If you change the URL or credentials, click **Save & Connect** to apply the changes and attempt a reconnection.
 
@@ -174,16 +171,15 @@ Once connected, you can configure the OpenClaw server itself from within ClawCon
 3. Make changes — a save bar appears at the bottom when edits are detected.
 4. Click **Save** to apply. The server restarts automatically and the app reconnects.
 
-### Authentication Modes
+### Authentication
 
-ClawControl supports two authentication modes, matching your server's `gateway.auth.mode` setting:
+ClawControl uses **Ed25519 device identity pairing** for authentication. On first connection:
 
-| Mode | Server Config | Auth Payload |
-|------|---------------|--------------|
-| **Token** | `gateway.auth.mode = "token"` | `{ token: "your-token" }` |
-| **Password** | `gateway.auth.mode = "password"` | `{ password: "your-password" }` |
+1. The app generates a device keypair and displays a pairing code.
+2. Approve the pairing request on the server to grant access.
+3. Subsequent connections authenticate automatically using the device signature.
 
-Select the mode that matches your OpenClaw server configuration.
+You can set a custom **Device Name** in the connection settings to identify your device on the server.
 
 ### Self-Signed Certificates
 
@@ -263,25 +259,27 @@ clawcontrol/
 ├── src/
 │   ├── components/        # React components
 │   │   ├── ChatArea.tsx
-│   │   ├── InputArea.tsx
+│   │   ├── InputArea.tsx             # Message input with voice dictation & image attach
 │   │   ├── RightPanel.tsx
-│   │   ├── Sidebar.tsx
+│   │   ├── Sidebar.tsx               # Session list with pinned sessions
 │   │   ├── TopBar.tsx
 │   │   ├── SettingsModal.tsx
 │   │   ├── CertErrorModal.tsx
-│   │   ├── AgentDashboard.tsx       # Live agent activity grid
+│   │   ├── AgentDashboard.tsx        # Live agent activity grid
 │   │   ├── AgentDetailView.tsx
-│   │   ├── CreateAgentView.tsx      # Agent creation form
+│   │   ├── CreateAgentView.tsx       # Agent creation form
 │   │   ├── SkillDetailView.tsx
 │   │   ├── ClawHubSkillDetailView.tsx  # ClawHub browser detail
 │   │   ├── CronJobDetailView.tsx
+│   │   ├── CreateCronJobView.tsx     # Cron job creation form
+│   │   ├── UsageView.tsx             # Usage charts, cost tracking, heatmaps
 │   │   ├── ServerSettingsView.tsx
-│   │   ├── SubagentBlock.tsx        # Inline subagent status
-│   │   ├── SubagentViewer.tsx       # Popout subagent window
-│   │   ├── ToolCallViewer.tsx       # Tool call detail popout
-│   │   ├── ToolIcon.tsx             # Per-tool icon mapping
-│   │   ├── MobileGestureLayer.tsx   # Mobile swipe/long-press
-│   │   └── SessionContextMenu.tsx   # Session right-click menu
+│   │   ├── SubagentBlock.tsx         # Inline subagent status
+│   │   ├── SubagentViewer.tsx        # Popout subagent window
+│   │   ├── ToolCallViewer.tsx        # Tool call detail popout
+│   │   ├── ToolIcon.tsx              # Per-tool icon mapping
+│   │   ├── MobileGestureLayer.tsx    # Mobile swipe/long-press
+│   │   └── SessionContextMenu.tsx    # Session right-click menu
 │   ├── hooks/
 │   │   ├── useSwipeGesture.ts  # Touch swipe gesture hook
 │   │   └── useLongPress.ts     # Long-press gesture hook
@@ -295,9 +293,11 @@ clawcontrol/
 │   │   │   ├── config.ts        # Server config read/write (config.get, config.patch)
 │   │   │   ├── skills.ts        # Skill listing, toggle, install
 │   │   │   ├── cron-jobs.ts     # Cron job listing, toggle, details
+│   │   │   ├── features.ts      # Usage, TTS, and voice wake RPC methods
 │   │   │   ├── utils.ts         # ANSI stripping, content extraction, helpers
 │   │   │   └── index.ts         # Public re-exports
 │   │   ├── openclaw-client.test.ts  # Integration tests (Vitest)
+│   │   ├── appMeta.ts          # Centralized app version and client identity
 │   │   ├── platform.ts         # Platform abstraction (Electron/Capacitor/web)
 │   │   ├── device-identity.ts  # Ed25519 device identity and pairing
 │   │   ├── native-websocket.ts # Native Capacitor WebSocket bridge
@@ -360,8 +360,8 @@ On connect, the server sends a `connect.challenge` event. The client responds wi
     minProtocol: 3,
     maxProtocol: 3,
     role: 'operator',
-    client: { id: 'clawcontrol', displayName: 'ClawControl', version: '1.2.0' },
-    auth: { token: 'your-token' }  // or { password: 'your-password' }
+    client: { id: 'openclaw-control-ui', displayName: 'ClawControl', version: '1.3.1' },
+    auth: { deviceId: '...', signature: '...', timestamp: 1234567890 }
   }
 }
 ```
@@ -374,11 +374,16 @@ On connect, the server sends a `connect.challenge` event. The client responds wi
 - `sessions.patch` - Update session properties (e.g., label)
 
 **Chat**
-- `chat.send` - Send a message (`sessionKey`, `message`, `thinking`)
+- `chat.send` - Send a message (`sessionKey`, `message`, `thinking`, `images`)
 - `chat.history` - Get messages for a session
+- `chat.abort` - Abort an in-progress chat stream
 
 **Agents**
 - `agents.list` - List available agents
+- `agent.identity.get` - Get agent identity and profile
+- `agents.files.list` - List agent workspace files
+- `agents.files.get` - Read an agent file
+- `agents.files.set` - Write an agent file
 
 **Skills**
 - `skills.status` - List skills with full metadata (enabled state, requirements, install options)
@@ -389,10 +394,25 @@ On connect, the server sends a `connect.challenge` event. The client responds wi
 - `config.get` - Read the full server config (returns config object + hash for conflict detection)
 - `config.patch` - Write partial config updates via JSON merge patch (triggers server restart)
 
+**Usage & Billing**
+- `usage.status` - Server limits, providers, rate windows
+- `usage.cost` - Daily cost breakdown with token details
+
+**TTS & Voice**
+- `tts.status` - Check TTS enabled/disabled state
+- `tts.providers` - List available TTS providers
+- `tts.enable` / `tts.disable` - Toggle TTS
+- `tts.setProvider` - Switch TTS provider
+- `voicewake.get` / `voicewake.set` - Configure wake-word detection
+
 **Cron Jobs**
 - `cron.list` - List scheduled jobs
 - `cron.get` - Get full cron job details
+- `cron.add` - Create a new cron job
 - `cron.update` - Update job status (active/paused)
+- `cron.remove` - Delete a cron job
+- `cron.run` - Manually trigger a cron job
+- `cron.runs` - Get run history for a job
 
 ### Full Method List (From `hello-ok`)
 
@@ -505,6 +525,7 @@ The client uses per-session stream isolation (`Map<string, SessionStreamState>`)
 - **TypeScript** - Type safety
 - **Vite** - Build tool
 - **Zustand** - State management
+- **Recharts** - Usage charts and data visualization
 - **Vitest** - Testing framework
 
 ## License
