@@ -60,7 +60,8 @@ public class NativeWebSocketPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         self.manager = mgr
-        mgr.connect(url: url)
+        let origin = call.getString("origin")
+        mgr.connect(url: url, origin: origin)
         call.resolve()
     }
 

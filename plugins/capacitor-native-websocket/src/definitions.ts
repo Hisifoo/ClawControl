@@ -14,6 +14,8 @@ export interface ConnectOptions {
   url: string
   /** TLS certificate handling options. */
   tls?: TLSOptions
+  /** Origin header to send with the WebSocket upgrade request. */
+  origin?: string
 }
 
 export interface SendOptions {

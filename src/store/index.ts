@@ -1277,6 +1277,7 @@ export const useStore = create<AppState>()(
               required: false,
               allowTOFU: true,
               storeKey: host,
+              origin: 'capacitor://localhost',
             })
           } catch {
             // URL parsing failed, proceed without factory

@@ -9,6 +9,10 @@ export type { TLSOptions }
 
 type ListenerHandle = { remove: () => Promise<void> }
 
+export interface NativeWebSocketOptions extends TLSOptions {
+  origin?: string
+}
+
 export class NativeWebSocketWrapper {
   static readonly CONNECTING = 0
   static readonly OPEN = 1
@@ -29,15 +33,15 @@ export class NativeWebSocketWrapper {
 
   private listeners: ListenerHandle[] = []
 
-  constructor(url: string, tlsOptions?: TLSOptions) {
+  constructor(url: string, options?: NativeWebSocketOptions) {
     this.readyState = NativeWebSocketWrapper.CONNECTING
-    this.init(url, tlsOptions)
+    this.init(url, options)
   }
 
   /** Browser WebSocket used as fallback when native plugin isn't available. */
   private fallbackWs: WebSocket | null = null
 
-  private async init(url: string, tlsOptions?: TLSOptions): Promise<void> {
+  private async init(url: string, options?: NativeWebSocketOptions): Promise<void> {
     try {
       const openHandle = await NativeWebSocket.addListener('open', () => {
         this.readyState = NativeWebSocketWrapper.OPEN
@@ -66,7 +70,8 @@ export class NativeWebSocketWrapper {
       })
       this.listeners.push(errorHandle)
 
-      await NativeWebSocket.connect({ url, tls: tlsOptions })
+      const { origin, ...tlsOptions } = options || {} as NativeWebSocketOptions
+      await NativeWebSocket.connect({ url, tls: tlsOptions, origin })
     } catch (err) {
       const msg = String(err)
       // If the native plugin isn't registered, fall back to browser WebSocket

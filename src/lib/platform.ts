@@ -124,6 +124,7 @@ export interface TLSFactoryOptions {
   expectedFingerprint?: string
   allowTOFU?: boolean
   storeKey?: string
+  origin?: string
 }
 
 /**

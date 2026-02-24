@@ -24,13 +24,20 @@ final class WebSocketManager: NSObject, URLSessionDelegate, URLSessionWebSocketD
         super.init()
     }
 
-    func connect(url: URL) {
+    func connect(url: URL, origin: String? = nil) {
         let config = URLSessionConfiguration.default
         config.waitsForConnectivity = false
         config.timeoutIntervalForResource = 15
+        if let origin {
+            config.httpAdditionalHeaders = ["Origin": origin]
+        }
         session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
 
-        task = session!.webSocketTask(with: url)
+        var request = URLRequest(url: url)
+        if let origin {
+            request.setValue(origin, forHTTPHeaderField: "Origin")
+        }
+        task = session!.webSocketTask(with: request)
         task!.maximumMessageSize = 16 * 1024 * 1024
         task!.resume()
     }

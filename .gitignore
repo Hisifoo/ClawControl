@@ -43,6 +43,9 @@ android/
 !plugins/
 plugins/*/dist/
 plugins/*/node_modules/
+plugins/*/.build/
+plugins/*/.swiftpm/
+plugins/*/Package.resolved
 !plugins/*/ios/
 /openclaw/
 /skills
