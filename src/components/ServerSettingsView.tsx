@@ -740,7 +740,7 @@ function FeaturesTab() {
 
       <div className="settings-section">
         <h3>Voice Wake</h3>
-        <p className="setting-description">Listen for wake words continuously.</p>
+        <p className="setting-description">Listen for wake words continuously. Currently only supported on Android and web browsers.</p>
 
         <div className="settings-row">
           <div className="settings-row-label">
