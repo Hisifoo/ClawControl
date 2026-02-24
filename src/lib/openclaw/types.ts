@@ -7,6 +7,7 @@ export interface Message {
   timestamp: string
   thinking?: string
   images?: MessageImage[]
+  audioUrl?: string
 }
 
 export interface MessageImage {

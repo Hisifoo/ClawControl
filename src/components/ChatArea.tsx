@@ -260,7 +260,7 @@ const MessageBubble = memo(function MessageBubble({
               streaming={!!streamingThinking && !message.thinking}
             />
           )}
-          <MessageContent content={message.content} images={message.images} />
+          <MessageContent content={message.content} images={message.images} audioUrl={message.audioUrl} />
         </div>
       </div>
 
@@ -417,7 +417,7 @@ renderer.code = function (this: unknown, ...args: Parameters<typeof originalCode
   return `<div class="code-block-wrapper"><button class="code-copy-btn" type="button" aria-label="Copy code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>${html}</div>`
 }
 
-function MessageContent({ content, images }: { content: string; images?: Message['images'] }) {
+function MessageContent({ content, images, audioUrl }: { content: string; images?: Message['images']; audioUrl?: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const html = useMemo(
     () => marked.parse(stripAnsi(content), { async: false, renderer }) as string,
@@ -487,6 +487,13 @@ function MessageContent({ content, images }: { content: string; images?: Message
               }}
             />
           ))}
+        </div>
+      )}
+      {audioUrl && (
+        <div className="message-audio">
+          <audio controls preload="metadata" src={audioUrl}>
+            <a href={audioUrl} target="_blank" rel="noopener">Download audio</a>
+          </audio>
         </div>
       )}
     </div>

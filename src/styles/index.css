@@ -3303,6 +3303,18 @@ a {
   object-fit: contain;
 }
 
+.message-audio {
+  margin-top: var(--space-sm);
+}
+
+.message-audio audio {
+  width: 100%;
+  max-width: 360px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  outline: none;
+}
+
 .empty-content {
   display: flex;
   flex-direction: column;

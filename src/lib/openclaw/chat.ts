@@ -223,18 +223,22 @@ export async function getSessionMessages(call: RpcCaller, sessionId: string, gat
           content = stripConversationMetadata(content).trim()
         }
 
-        // Parse MEDIA: tokens from assistant messages and convert to image URLs
+        // Parse MEDIA: tokens from assistant messages and convert to image/audio URLs
+        let audioUrl: string | undefined
         if (normalizedRole === 'assistant' && content.includes('MEDIA:')) {
           const parsed = parseMediaTokens(content, gatewayUrl)
           content = parsed.cleanText
           if (parsed.images.length > 0) {
             images = [...images, ...parsed.images]
           }
+          if (parsed.audioUrls.length > 0) {
+            audioUrl = parsed.audioUrls[0]
+          }
         }
 
         // Filter out non-assistant entries without displayable text content.
         // Keep empty assistant messages so tool calls can anchor to them.
-        if (!content && images.length === 0 && normalizedRole !== 'assistant') return null
+        if (!content && images.length === 0 && !audioUrl && normalizedRole !== 'assistant') return null
 
         return {
           id: msgId,
@@ -242,7 +246,8 @@ export async function getSessionMessages(call: RpcCaller, sessionId: string, gat
           content: stripAnsi(content),
           thinking: thinking ? stripAnsi(thinking) : thinking,
           timestamp: new Date(msg.timestamp || m.timestamp || msg.ts || m.ts || msg.createdAt || m.createdAt || Date.now()).toISOString(),
-          images: images.length > 0 ? images : undefined
+          images: images.length > 0 ? images : undefined,
+          audioUrl
         }
       }) as (Message | null)[]
 

@@ -126,17 +126,21 @@ export function extractImagesFromContent(content: unknown): Array<{ url: string;
   })
 }
 
+const AUDIO_EXTENSIONS = /\.(mp3|opus|ogg|wav|m4a|aac|webm)$/i
+
 /**
  * Parse MEDIA: tokens from message text.
- * OpenClaw agents emit "MEDIA: /path/to/file" lines for generated images.
+ * OpenClaw agents emit "MEDIA: /path/to/file" lines for generated images/audio.
  * This extracts the paths and returns cleaned text with MEDIA lines removed.
  */
 export function parseMediaTokens(text: string, gatewayUrl?: string): {
   cleanText: string
   images: Array<{ url: string; mimeType?: string; alt?: string }>
+  audioUrls: string[]
 } {
   const MEDIA_RE = /\bMEDIA:\s*`?([^\n`]+)`?/gi
   const images: Array<{ url: string; mimeType?: string; alt?: string }> = []
+  const audioUrls: string[] = []
   const cleanLines: string[] = []
 
   for (const line of text.split('\n')) {
@@ -151,6 +155,8 @@ export function parseMediaTokens(text: string, gatewayUrl?: string): {
       if (mediaPath.endsWith('`')) mediaPath = mediaPath.slice(0, -1).trim()
       if (!mediaPath) continue
 
+      const isAudio = AUDIO_EXTENSIONS.test(mediaPath)
+
       // Convert local file path to gateway media URL
       if (mediaPath.startsWith('/') && !mediaPath.startsWith('//')) {
         let baseUrl = ''
@@ -161,12 +167,18 @@ export function parseMediaTokens(text: string, gatewayUrl?: string): {
             baseUrl = `${protocol}//${u.host}`
           } catch { /* ignore */ }
         }
-        images.push({
-          url: `${baseUrl}/api/media${mediaPath}`,
-          alt: mediaPath.split('/').pop() || 'Generated image'
-        })
+        const url = `${baseUrl}/api/media${mediaPath}`
+        if (isAudio) {
+          audioUrls.push(url)
+        } else {
+          images.push({ url, alt: mediaPath.split('/').pop() || 'Generated image' })
+        }
       } else if (/^https?:\/\//i.test(mediaPath)) {
-        images.push({ url: mediaPath, alt: 'Generated image' })
+        if (isAudio) {
+          audioUrls.push(mediaPath)
+        } else {
+          images.push({ url: mediaPath, alt: 'Generated image' })
+        }
       }
     }
     // Keep non-MEDIA parts of the line if any text remains
@@ -174,7 +186,7 @@ export function parseMediaTokens(text: string, gatewayUrl?: string): {
     if (remainder) cleanLines.push(remainder)
   }
 
-  return { cleanText: cleanLines.join('\n'), images }
+  return { cleanText: cleanLines.join('\n'), images, audioUrls }
 }
 
 export function isHeartbeatContent(text: string): boolean {

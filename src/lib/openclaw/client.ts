@@ -644,15 +644,19 @@ export class OpenClawClient {
               const thinkingBlock = payload.message.content.find((c: any) => c.type === 'thinking')
               if (thinkingBlock?.thinking) thinking = thinkingBlock.thinking
             }
-            // Parse MEDIA: tokens from text and convert to image URLs
+            // Parse MEDIA: tokens from text and convert to image/audio URLs
+            let audioUrl: string | undefined
             if (text.includes('MEDIA:')) {
               const parsed = parseMediaTokens(text, this.url)
               text = parsed.cleanText.trim()
               if (parsed.images.length > 0) {
                 images = [...images, ...parsed.images]
               }
+              if (parsed.audioUrls.length > 0) {
+                audioUrl = parsed.audioUrls[0]
+              }
             }
-            if ((text && !isNoiseContent(text)) || images.length > 0) {
+            if ((text && !isNoiseContent(text)) || images.length > 0 || audioUrl) {
               const id =
                 (typeof payload.message.id === 'string' && payload.message.id) ||
                 (typeof payload.runId === 'string' && payload.runId) ||
@@ -667,6 +671,7 @@ export class OpenClawClient {
                 timestamp: new Date(tsMs).toISOString(),
                 thinking,
                 images: images.length > 0 ? images : undefined,
+                audioUrl,
                 sessionKey: eventSessionKey
               })
             }
