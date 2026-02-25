@@ -19,6 +19,8 @@ export function SettingsModal() {
     connecting,
     notificationsEnabled,
     setNotificationsEnabled,
+    streamingDisabled,
+    setStreamingDisabled,
     openServerSettings,
     theme,
     toggleTheme,
@@ -526,6 +528,21 @@ export function SettingsModal() {
               </label>
             </label>
             <span className="form-hint">Get notified when an agent responds</span>
+          </div>
+
+          <div className="form-group" style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '16px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Streaming</span>
+              <label className="toggle-switch" style={{ marginLeft: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={!streamingDisabled}
+                  onChange={(e) => setStreamingDisabled(!e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+            </label>
+            <span className="form-hint">Show responses as they stream in. When off, the full response appears at once.</span>
           </div>
 
           {connected && (

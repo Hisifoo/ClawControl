@@ -153,6 +153,8 @@ interface AppState {
   compactingSession: string | null
   thinkingEnabled: boolean
   setThinkingEnabled: (enabled: boolean) => void
+  streamingDisabled: boolean
+  setStreamingDisabled: (disabled: boolean) => void
   draftMessage: string
   setDraftMessage: (message: string) => void
 
@@ -641,6 +643,8 @@ export const useStore = create<AppState>()(
       compactingSession: null,
       thinkingEnabled: false,
       setThinkingEnabled: (enabled) => set({ thinkingEnabled: enabled }),
+      streamingDisabled: false,
+      setStreamingDisabled: (disabled) => set({ streamingDisabled: disabled }),
       draftMessage: '',
       setDraftMessage: (message) => set({ draftMessage: message }),
 
@@ -1644,7 +1648,7 @@ export const useStore = create<AppState>()(
             // Skip empty chunks
             if (!text) return
 
-            const { currentSessionId } = get()
+            const { currentSessionId, streamingDisabled } = get()
             const resolvedKey = sessionKey || currentSessionId
             const isCurrentSession = !sessionKey || !currentSessionId || sessionKey === currentSessionId
 
@@ -1654,6 +1658,18 @@ export const useStore = create<AppState>()(
                 set((state) => ({
                   streamingSessions: { ...state.streamingSessions, [resolvedKey]: true },
                   sessionHadChunks: { ...state.sessionHadChunks, [resolvedKey]: true },
+                }))
+              }
+              return
+            }
+
+            // When streaming display is disabled, track that we're streaming
+            // but don't create/update the placeholder message. The typing indicator
+            // stays visible (sessionHadChunks remains false) until the final message arrives.
+            if (streamingDisabled) {
+              if (resolvedKey) {
+                set((state) => ({
+                  streamingSessions: { ...state.streamingSessions, [resolvedKey]: true },
                 }))
               }
               return
@@ -2211,6 +2227,7 @@ export const useStore = create<AppState>()(
         sidebarCollapsed: state.sidebarCollapsed,
         collapsedSessionGroups: state.collapsedSessionGroups,
         thinkingEnabled: state.thinkingEnabled,
+        streamingDisabled: state.streamingDisabled,
         notificationsEnabled: state.notificationsEnabled,
         rightPanelWidth: state.rightPanelWidth
       })
