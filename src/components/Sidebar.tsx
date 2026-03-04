@@ -708,7 +708,8 @@ function AgentSelector({
           {currentAgent?.emoji ? (
             <span className="agent-emoji-small">{currentAgent.emoji}</span>
           ) : currentAgent?.avatar ? (
-            <img src={currentAgent.avatar} alt={currentAgent.name} className="agent-avatar-img-small" />
+            <img src={currentAgent.avatar} alt={currentAgent.name} className="agent-avatar-img-small"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
           ) : (
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2zm-4 12a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm8 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
@@ -764,7 +765,8 @@ function AgentSelector({
               {agent.emoji ? (
                 <span className="agent-emoji-small">{agent.emoji}</span>
               ) : agent.avatar ? (
-                <img src={agent.avatar} alt={agent.name} className="agent-avatar-img-small" />
+                <img src={agent.avatar} alt={agent.name} className="agent-avatar-img-small"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
               ) : (
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2zm-4 12a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm8 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />

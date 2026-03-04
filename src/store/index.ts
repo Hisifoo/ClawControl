@@ -953,6 +953,36 @@ export const useStore = create<AppState>()(
           const success = await client.setAgentFile(agentId, 'IDENTITY.md', content)
           if (!success) return false
 
+          // For non-main agents, also update the config name so fetchAgents()
+          // (which prefers config name over identity name) picks up the new name.
+          if (agentId !== 'main') {
+            try {
+              const { config, hash } = await client.getServerConfig()
+              if (config && hash) {
+                const agentsSection = config.agents || {}
+                const existingList: any[] = Array.isArray(agentsSection.list) ? agentsSection.list : []
+                const updatedList = existingList.map((a: any) => {
+                  const id = a.id || a.name || ''
+                  if (id !== agentId) return a
+                  return { ...a, name: newName.trim() }
+                })
+                await client.patchServerConfig({ agents: { list: updatedList } }, hash)
+
+                // Wait for server restart
+                await new Promise<void>((resolve) => {
+                  let resolved = false
+                  const onConnected = () => {
+                    if (!resolved) { resolved = true; client.off('connected', onConnected); resolve() }
+                  }
+                  client.on('connected', onConnected)
+                  setTimeout(onConnected, 5000)
+                })
+              }
+            } catch {
+              // Config patch failed — IDENTITY.md was still updated, continue
+            }
+          }
+
           // Update local state immediately
           set((state) => {
             if (!state.selectedAgentDetail || state.selectedAgentDetail.agent.id !== agentId) return state

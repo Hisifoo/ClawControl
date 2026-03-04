@@ -16,6 +16,21 @@ import logoUrl from '../../build/icon.png'
 // GFM tables/strikethrough enabled, synchronous parsing.
 marked.setOptions({ breaks: true, gfm: true, async: false })
 
+const robotSvgPath = 'M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2zm-4 12a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm8 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z'
+
+/** Agent avatar with fallback to robot SVG on load error */
+function AgentAvatarImg({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false)
+  if (failed) {
+    return (
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d={robotSvgPath} />
+      </svg>
+    )
+  }
+  return <img src={src} alt={alt} onError={() => setFailed(true)} />
+}
+
 export function ChatArea() {
   const { messages: allMessages, agents, currentAgentId, sessions, currentSessionId, activeSubagents, openSubagentPopout, openToolCallPopout, setDraftMessage, pendingExecApprovals, resolveExecApproval } = useStore(useShallow(state => ({
     messages: state.messages,
@@ -207,10 +222,10 @@ export function ChatArea() {
           <div className="message agent compaction-indicator-container">
             <div className="message-avatar">
               {currentAgent?.avatar ? (
-                <img src={currentAgent.avatar} alt={currentAgent.name || 'Agent'} />
+                <AgentAvatarImg src={currentAgent.avatar} alt={currentAgent.name || 'Agent'} />
               ) : (
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2zm-4 12a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm8 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+                  <path d={robotSvgPath} />
                 </svg>
               )}
             </div>
@@ -229,10 +244,10 @@ export function ChatArea() {
           <div className="message agent typing-indicator-container">
             <div className="message-avatar">
               {currentAgent?.avatar ? (
-                <img src={currentAgent.avatar} alt={currentAgent.name || 'Agent'} />
+                <AgentAvatarImg src={currentAgent.avatar} alt={currentAgent.name || 'Agent'} />
               ) : (
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2zm-4 12a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm8 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+                  <path d={robotSvgPath} />
                 </svg>
               )}
             </div>
@@ -373,10 +388,10 @@ const MessageBubble = memo(function MessageBubble({
       {!isUser && (
         <div className="message-avatar">
           {agentAvatar ? (
-            <img src={agentAvatar} alt={agentName || 'Agent'} />
+            <AgentAvatarImg src={agentAvatar} alt={agentName || 'Agent'} />
           ) : (
             <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2zm-4 12a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm8 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+              <path d={robotSvgPath} />
             </svg>
           )}
         </div>
@@ -455,10 +470,10 @@ function ToolCallBubble({ toolCalls, agentAvatar, agentName, onOpenPopout }: {
     <div className="message agent tool-call-bubble">
       <div className="message-avatar">
         {agentAvatar ? (
-          <img src={agentAvatar} alt={agentName || 'Agent'} />
+          <AgentAvatarImg src={agentAvatar} alt={agentName || 'Agent'} />
         ) : (
           <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2zm-4 12a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm8 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+            <path d={robotSvgPath} />
           </svg>
         )}
       </div>
@@ -573,6 +588,8 @@ function dataUriToBlobUrl(dataUri: string): string | null {
 
 function ChatImage({ url, alt }: { url: string; alt?: string }) {
   const [error, setError] = useState(false)
+  // Track whether we already tried falling back from blob URL to data URI
+  const [blobFailed, setBlobFailed] = useState(false)
   const blobUrl = useMemo(() => {
     if (url.startsWith('data:')) return dataUriToBlobUrl(url)
     return null
@@ -583,7 +600,8 @@ function ChatImage({ url, alt }: { url: string; alt?: string }) {
     return () => { if (blobUrl) URL.revokeObjectURL(blobUrl) }
   }, [blobUrl])
 
-  const src = blobUrl || url
+  // Use blob URL first, fall back to original data URI if blob fails (e.g. Android WebView)
+  const src = (blobUrl && !blobFailed) ? blobUrl : url
 
   if (error) {
     // For data: URIs, a link is useless — show an inline error placeholder.
@@ -605,7 +623,14 @@ function ChatImage({ url, alt }: { url: string; alt?: string }) {
       src={src}
       alt={alt || 'Attached image'}
       loading="lazy"
-      onError={() => setError(true)}
+      onError={() => {
+        // If a blob URL failed, fall back to the original data URI before giving up
+        if (blobUrl && !blobFailed) {
+          setBlobFailed(true)
+        } else {
+          setError(true)
+        }
+      }}
     />
   )
 }
