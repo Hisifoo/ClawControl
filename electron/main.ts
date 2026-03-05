@@ -6,8 +6,8 @@ import crypto from 'crypto'
 import os from 'os'
 import { pathToFileURL } from 'url'
 
-// On Windows production builds, serve via a custom protocol scheme to avoid file:// origin issues
-const useCustomProtocol = process.platform === 'win32' && !process.env.VITE_DEV_SERVER_URL
+// On production builds, serve via a custom protocol scheme to avoid file:// origin issues
+const useCustomProtocol = !process.env.VITE_DEV_SERVER_URL
 
 if (useCustomProtocol) {
   protocol.registerSchemesAsPrivileged([{
@@ -183,7 +183,7 @@ app.whenReady().then(() => {
     app.dock.setIcon(join(__dirname, '../build/icon.png'))
   }
 
-  // Register custom protocol handler for Windows production builds
+  // Register custom protocol handler for production builds
   if (useCustomProtocol) {
     const distPath = join(__dirname, '../dist')
     protocol.handle('app', (request) => {
