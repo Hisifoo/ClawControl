@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useStore } from '../store'
 import { Skill, CronJob, Hook } from '../lib/openclaw'
 import type { ClawHubSkill, ClawHubSort } from '../lib/clawhub'
@@ -46,7 +47,35 @@ export function RightPanel() {
     selectClawHubSkill,
     selectedClawHubSkill,
     agents
-  } = useStore()
+  } = useStore(useShallow(state => ({
+    rightPanelOpen: state.rightPanelOpen,
+    setRightPanelOpen: state.setRightPanelOpen,
+    rightPanelWidth: state.rightPanelWidth,
+    setRightPanelWidth: state.setRightPanelWidth,
+    rightPanelTab: state.rightPanelTab,
+    setRightPanelTab: state.setRightPanelTab,
+    skills: state.skills,
+    cronJobs: state.cronJobs,
+    selectSkill: state.selectSkill,
+    selectCronJob: state.selectCronJob,
+    selectHook: state.selectHook,
+    selectedSkill: state.selectedSkill,
+    selectedCronJob: state.selectedCronJob,
+    selectedHook: state.selectedHook,
+    hooks: state.hooks,
+    hooksConfig: state.hooksConfig,
+    toggleInternalHooksEnabled: state.toggleInternalHooksEnabled,
+    skillsSubTab: state.skillsSubTab,
+    setSkillsSubTab: state.setSkillsSubTab,
+    clawHubSkills: state.clawHubSkills,
+    clawHubLoading: state.clawHubLoading,
+    clawHubSort: state.clawHubSort,
+    setClawHubSort: state.setClawHubSort,
+    searchClawHubSkills: state.searchClawHubSkills,
+    selectClawHubSkill: state.selectClawHubSkill,
+    selectedClawHubSkill: state.selectedClawHubSkill,
+    agents: state.agents,
+  })))
 
   const resizing = useRef(false)
   const startX = useRef(0)

@@ -380,10 +380,6 @@ export class OpenClawClient {
       if (this.ws && this.ws.readyState === this.ws.OPEN && this.authenticated) {
         const id = (++this.requestId).toString()
         const request = { type: 'req', method: 'skills.status', params: {}, id }
-        this.pendingRequests.set(id, {
-          resolve: () => { this.pendingRequests.delete(id) },
-          reject: () => { this.pendingRequests.delete(id) }
-        })
         // Timeout cleanup: if no response arrives, remove the pending request to avoid leaks
         const probeTimeout = setTimeout(() => {
           if (this.pendingRequests.has(id)) {

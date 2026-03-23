@@ -964,11 +964,13 @@ export const useStore = create<AppState>()(
           // Wait for server restart and refresh
           await new Promise<void>((resolve) => {
             let resolved = false
-            const onConnected = () => {
+            const fallback = setTimeout(() => {
               if (!resolved) { resolved = true; client.off('connected', onConnected); resolve() }
+            }, 5000)
+            const onConnected = () => {
+              if (!resolved) { resolved = true; clearTimeout(fallback); client.off('connected', onConnected); resolve() }
             }
             client.on('connected', onConnected)
-            setTimeout(onConnected, 5000)
           })
 
           await get().fetchAgents()
@@ -1639,9 +1641,9 @@ export const useStore = create<AppState>()(
           // config.patch triggers server restart — refetch after reconnect
           await new Promise<void>((resolve) => {
             let resolved = false
-            const onConnected = () => { if (!resolved) { resolved = true; client.off('connected', onConnected); resolve() } }
+            const fallback = setTimeout(() => { if (!resolved) { resolved = true; client.off('connected', onConnected); resolve() } }, 5000)
+            const onConnected = () => { if (!resolved) { resolved = true; clearTimeout(fallback); client.off('connected', onConnected); resolve() } }
             client.on('connected', onConnected)
-            setTimeout(onConnected, 5000)
           })
           await get().fetchHooks()
         } catch {
@@ -1664,9 +1666,9 @@ export const useStore = create<AppState>()(
           await client.toggleInternalHooksEnabled(enabled)
           await new Promise<void>((resolve) => {
             let resolved = false
-            const onConnected = () => { if (!resolved) { resolved = true; client.off('connected', onConnected); resolve() } }
+            const fallback = setTimeout(() => { if (!resolved) { resolved = true; client.off('connected', onConnected); resolve() } }, 5000)
+            const onConnected = () => { if (!resolved) { resolved = true; clearTimeout(fallback); client.off('connected', onConnected); resolve() } }
             client.on('connected', onConnected)
-            setTimeout(onConnected, 5000)
           })
           await get().fetchHooks()
         } catch {
@@ -2839,7 +2841,7 @@ export const useStore = create<AppState>()(
 
         // Add user message immediately
         const userMessage: Message = {
-          id: Date.now().toString(),
+          id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           role: 'user',
           content,
           timestamp: new Date().toISOString(),

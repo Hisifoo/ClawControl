@@ -137,7 +137,7 @@ export interface SessionPatchParams {
 export async function updateSession(call: RpcCaller, sessionId: string, updates: SessionPatchParams): Promise<void> {
   const params: Record<string, unknown> = { key: sessionId }
   for (const [k, v] of Object.entries(updates)) {
-    if (k in updates) params[k] = v
+    if (v !== undefined) params[k] = v
   }
   await call('sessions.patch', params)
 }

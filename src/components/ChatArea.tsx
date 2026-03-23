@@ -166,6 +166,8 @@ export function ChatArea() {
   }, [messages.length])
 
   // Ctrl+F / Cmd+F to open search
+  const searchOpenRef = useRef(false)
+  searchOpenRef.current = searchOpen
   useEffect(() => {
     const handler = (e: globalThis.KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -173,7 +175,7 @@ export function ChatArea() {
         setSearchOpen(true)
         setTimeout(() => searchInputRef.current?.focus(), 50)
       }
-      if (e.key === 'Escape' && searchOpen) {
+      if (e.key === 'Escape' && searchOpenRef.current) {
         setSearchOpen(false)
         setSearchQuery('')
         setSearchMatchIndex(0)
@@ -181,7 +183,7 @@ export function ChatArea() {
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [searchOpen])
+  }, [])
 
   // Search match computation
   const searchMatches = useMemo(() => {
@@ -505,6 +507,30 @@ function DateSeparator({ date }: { date: Date }) {
   return (
     <div className="date-separator">
       <span>{dateText}</span>
+    </div>
+  )
+}
+
+/** Audio player that shows an expired message via React state instead of innerHTML */
+function AudioPlayer({ audioUrl, audioAsVoice }: { audioUrl: string; audioAsVoice?: boolean }) {
+  const [expired, setExpired] = useState(false)
+  if (expired) {
+    return (
+      <div className="message-audio message-audio--expired">
+        <span className="audio-expired">Voice message expired</span>
+      </div>
+    )
+  }
+  return (
+    <div className={`message-audio${audioAsVoice ? ' message-audio--voice' : ''}`}>
+      <audio
+        controls
+        preload="metadata"
+        src={audioUrl}
+        onError={() => setExpired(true)}
+      >
+        <a href={audioUrl} target="_blank" rel="noopener">Download audio</a>
+      </audio>
     </div>
   )
 }
@@ -1021,23 +1047,7 @@ function MessageContent({ content, images, audioUrl, audioAsVoice }: { content: 
         </div>
       )}
       {audioUrl && (
-        <div className={`message-audio${audioAsVoice ? ' message-audio--voice' : ''}`}>
-          <audio
-            controls
-            preload="metadata"
-            src={audioUrl}
-            onError={(e) => {
-              const audio = e.currentTarget
-              const wrapper = audio.parentElement
-              if (wrapper) {
-                wrapper.classList.add('message-audio--expired')
-                wrapper.innerHTML = '<span class="audio-expired">Voice message expired</span>'
-              }
-            }}
-          >
-            <a href={audioUrl} target="_blank" rel="noopener">Download audio</a>
-          </audio>
-        </div>
+        <AudioPlayer audioUrl={audioUrl} audioAsVoice={audioAsVoice} />
       )}
     </div>
   )

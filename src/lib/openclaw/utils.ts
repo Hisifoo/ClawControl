@@ -110,8 +110,10 @@ export function extractImagesFromContent(content: unknown): Array<{ url: string;
         // Validate that the data URI contains actual base64 after the prefix
         const commaIdx = trimmed.indexOf(',')
         if (commaIdx === -1) return
-        const payload = trimmed.slice(commaIdx + 1, commaIdx + 101)
-        if (!isLikelyBase64(payload)) return
+        const payload = trimmed.slice(commaIdx + 1)
+        // For data URIs we already know the prefix is valid, so just check
+        // that the payload contains only base64 characters (skip length check)
+        if (!payload || /[^A-Za-z0-9+/=\s]/.test(payload.slice(0, 200))) return
         images.push({ url: trimmed, mimeType: mime || blockMime, alt })
         return
       }

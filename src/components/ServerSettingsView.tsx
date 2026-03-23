@@ -55,7 +55,9 @@ function buildPatch(original: any, edited: any, paths: string[]): object | null 
   for (const path of paths) {
     const orig = getPath(original, path)
     const edit = getPath(edited, path)
-    if (edit !== orig && edit !== undefined) {
+    if (edit !== orig) {
+      // Skip if both are undefined (no change)
+      if (edit === undefined && orig === undefined) continue
       if (!patch) patch = {}
       // Build nested object for this path
       const keys = path.split('.')
@@ -64,7 +66,8 @@ function buildPatch(original: any, edited: any, paths: string[]): object | null 
         if (!current[keys[i]]) current[keys[i]] = {}
         current = current[keys[i]]
       }
-      current[keys[keys.length - 1]] = edit
+      // Use null to signal "clear this setting" when user removes a value
+      current[keys[keys.length - 1]] = edit !== undefined ? edit : null
     }
   }
   return patch
