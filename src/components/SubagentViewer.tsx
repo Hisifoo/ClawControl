@@ -3,6 +3,7 @@ import { OpenClawClient, Message, stripAnsi } from '../lib/openclaw'
 import { resolveToolDisplay, extractToolDetail } from '../lib/openclaw/tool-display'
 import { ToolIcon } from './ToolIcon'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { openExternal } from '../lib/platform'
 
 marked.setOptions({ breaks: true, gfm: true, async: false })
@@ -236,7 +237,7 @@ function ViewerMessage({ message }: { message: Message }) {
 function ViewerMarkdown({ content }: { content: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const html = useMemo(
-    () => marked.parse(stripAnsi(content), { async: false }) as string,
+    () => DOMPurify.sanitize(marked.parse(stripAnsi(content), { async: false }) as string),
     [content]
   )
 

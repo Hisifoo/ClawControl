@@ -108,7 +108,13 @@ export class OpenClawClient {
   }
 
   off(event: string, handler: EventHandler): void {
-    this.eventHandlers.get(event)?.delete(handler)
+    const handlers = this.eventHandlers.get(event)
+    if (handlers) {
+      handlers.delete(handler)
+      if (handlers.size === 0) {
+        this.eventHandlers.delete(event)
+      }
+    }
   }
 
   private emit(event: string, ...args: unknown[]): void {
@@ -217,7 +223,9 @@ export class OpenClawClient {
           if (incoming instanceof Blob) {
             incoming.text().then((text) => {
               this.handleMessage(text, (...a) => settle(resolve, ...a), (...a) => settle(reject, ...a))
-            }).catch(() => { })
+            }).catch((err) => {
+              settle(reject, new Error(`Failed to decode Blob frame: ${err}`))
+            })
             return
           }
 
@@ -225,8 +233,8 @@ export class OpenClawClient {
             try {
               const text = new TextDecoder().decode(new Uint8Array(incoming))
               this.handleMessage(text, (...a) => settle(resolve, ...a), (...a) => settle(reject, ...a))
-            } catch {
-              // ignore
+            } catch (err) {
+              settle(reject, new Error(`Failed to decode ArrayBuffer frame: ${err}`))
             }
             return
           }
@@ -259,7 +267,9 @@ export class OpenClawClient {
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
-      this.connect().catch(() => { })
+      this.connect().catch((err) => {
+        console.warn(`[OpenClaw] Reconnect attempt ${this.reconnectAttempts} failed:`, err?.message || err)
+      })
     }, delay)
   }
 
@@ -505,6 +515,7 @@ export class OpenClawClient {
         // Special case: Handshake Challenge
         if (eventFrame.event === 'connect.challenge') {
           this.performHandshake(eventFrame.payload?.nonce).catch((err) => {
+            console.error('[OpenClaw] Handshake challenge signing failed:', err?.message || err)
             reject?.(err)
           })
           return
@@ -624,12 +635,14 @@ export class OpenClawClient {
     if (typeof runId === 'string' && !ss.runId) {
       ss.runId = runId
     }
-    this.maybeEmitSessionKey(runId, sessionKey)
 
+    // Assign source BEFORE emitting session key so handlers see correct state
     if (ss.source === null) {
       ss.source = source
     }
     if (ss.source !== source) return
+
+    this.maybeEmitSessionKey(runId, sessionKey)
 
     if (!ss.mode) {
       ss.mode = modeHint

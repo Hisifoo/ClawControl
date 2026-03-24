@@ -637,10 +637,12 @@ export function InputArea() {
     composingRef.current = false
     // Android IME: compositionend fires after onChange, so sync the final value now
     const val = (e.target as HTMLTextAreaElement).value
-    if (val.length <= maxLength) {
+    if (val.length > maxLength) {
+      setMessage(val.slice(0, maxLength))
+    } else {
       setMessage(val)
-      if (voiceError) setVoiceError(null)
     }
+    if (voiceError) setVoiceError(null)
   }
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -649,11 +651,15 @@ export function InputArea() {
     // unreliably on many keyboards (Gboard gesture, auto-suggest) which can
     // leave composingRef stuck true, blocking all input.
     if (composingRef.current && platform !== 'android') return
-    if (e.target.value.length <= maxLength) {
-      setMessage(e.target.value)
-      updateSlashCompletions(e.target.value)
-      if (voiceError) setVoiceError(null)
+    const val = e.target.value
+    if (val.length > maxLength) {
+      setMessage(val.slice(0, maxLength))
+      updateSlashCompletions(val.slice(0, maxLength))
+    } else {
+      setMessage(val)
+      updateSlashCompletions(val)
     }
+    if (voiceError) setVoiceError(null)
   }
 
   const handleVoiceInput = async () => {

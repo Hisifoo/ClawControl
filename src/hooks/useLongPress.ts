@@ -27,12 +27,16 @@ export function useLongPress(
     if (!isNativeMobile()) return
 
     const touch = e.touches[0]
-    startPosRef.current = { x: touch.clientX, y: touch.clientY }
+    // Capture coordinates as plain numbers immediately — the Touch object
+    // may be recycled by the browser before the timeout fires.
+    const x = touch.clientX
+    const y = touch.clientY
+    startPosRef.current = { x, y }
 
     timerRef.current = setTimeout(() => {
       timerRef.current = null
       triggerHaptic('medium')
-      onLongPress({ clientX: touch.clientX, clientY: touch.clientY })
+      onLongPress({ clientX: x, clientY: y })
     }, LONG_PRESS_DURATION)
   }, [onLongPress])
 

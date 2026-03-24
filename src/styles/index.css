@@ -2091,6 +2091,12 @@ a {
   overflow: hidden;
 }
 
+.chat-tool-card--expanded {
+  max-height: none;
+  overflow: visible;
+  border-color: var(--border-default);
+}
+
 .chat-tool-card:first-child {
   margin-top: 0;
 }
@@ -2242,6 +2248,61 @@ a {
   border-radius: var(--radius-sm);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.chat-tool-card__expanded-detail {
+  margin-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 10px;
+}
+
+.chat-tool-card__section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+}
+
+.chat-tool-card__args-content,
+.chat-tool-card__result-content {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.chat-tool-card__result {
+  margin-top: 8px;
+}
+
+.chat-tool-card__popout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms;
+}
+
+.chat-tool-card__popout-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-default);
 }
 
 .chat-tool-card .mono {
@@ -2725,10 +2786,6 @@ a {
   font-family: var(--font-mono);
 }
 
-.char-count .warning {
-  color: var(--accent-amber);
-}
-
 .keyboard-hint kbd {
   display: inline-block;
   padding: 2px 6px;
@@ -2741,6 +2798,8 @@ a {
 
 .voice-error {
   color: var(--accent-amber);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* ===== Right Panel ===== */
@@ -4334,6 +4393,10 @@ a.message-image-fallback:hover {
 
   .input-area {
     padding: var(--space-sm) var(--space-md);
+  }
+
+  .slash-command-menu {
+    max-width: 100%;
   }
 
   .input-footer {

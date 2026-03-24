@@ -117,8 +117,11 @@ export function ChatArea() {
       needsInstantScroll.current = true
       isAtBottom.current = true
       setShowScrollToBottom(false)
+      // Reset unread tracking for the new session
+      setUnreadBelow(0)
+      lastSeenCountRef.current = messages.length
     }
-  }, [currentSessionId])
+  }, [currentSessionId, messages.length])
 
   // Track scroll position to determine if user is near bottom
   useEffect(() => {
@@ -739,30 +742,36 @@ function getTruncatedPreview(text: string): string {
 }
 
 function ToolCallBlock({ toolCall, onOpenPopout }: { toolCall: ToolCall; onOpenPopout: (id: string) => void }) {
+  const [expanded, setExpanded] = useState(false)
   const isRunning = toolCall.phase === 'start'
   const display = resolveToolDisplay(toolCall.name)
   const detail = extractToolDetail(toolCall.args, display.detailKeys)
   const resultText = toolCall.result ? stripAnsi(toolCall.result).trim() : ''
   const hasText = resultText.length > 0
   const isShort = hasText && resultText.length <= TOOL_INLINE_THRESHOLD
-  const showCollapsed = hasText && !isShort
-  const showInline = hasText && isShort
+  const showCollapsed = hasText && !isShort && !expanded
+  const showInline = hasText && isShort && !expanded
   const isEmpty = !hasText && !isRunning
+  const hasArgs = toolCall.args && Object.keys(toolCall.args).length > 0
 
-  const canClick = hasText || isEmpty
+  const canClick = (hasText || hasArgs || isEmpty) && !isRunning
   const handleClick = () => {
-    if (hasText) {
-      onOpenPopout(toolCall.toolCallId)
+    if (hasText || hasArgs) {
+      setExpanded(!expanded)
     }
+  }
+  const handlePopout = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onOpenPopout(toolCall.toolCallId)
   }
 
   return (
     <div
-      className={`chat-tool-card${canClick && !isRunning ? ' chat-tool-card--clickable' : ''}`}
-      onClick={canClick && !isRunning ? handleClick : undefined}
-      role={canClick && !isRunning ? 'button' : undefined}
-      tabIndex={canClick && !isRunning ? 0 : undefined}
-      onKeyDown={canClick && !isRunning ? (e) => {
+      className={`chat-tool-card${canClick ? ' chat-tool-card--clickable' : ''}${expanded ? ' chat-tool-card--expanded' : ''}`}
+      onClick={canClick ? handleClick : undefined}
+      role={canClick ? 'button' : undefined}
+      tabIndex={canClick ? 0 : undefined}
+      onKeyDown={canClick ? (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick() }
       } : undefined}
     >
@@ -779,12 +788,16 @@ function ToolCallBlock({ toolCall, onOpenPopout }: { toolCall: ToolCall; onOpenP
           </span>
           <span>{display.title}</span>
         </div>
-        {!isRunning && hasText && (
+        {!isRunning && (hasText || hasArgs) && (
           <span className="chat-tool-card__action">
-            <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>
+            {expanded ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M18 15l-6-6-6 6" /></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M6 9l6 6 6-6" /></svg>
+            )}
           </span>
         )}
-        {isEmpty && (
+        {isEmpty && !hasArgs && (
           <span className="chat-tool-card__status">
             <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>
           </span>
@@ -793,8 +806,8 @@ function ToolCallBlock({ toolCall, onOpenPopout }: { toolCall: ToolCall; onOpenP
           <span className="chat-tool-card__running-text">Running&hellip;</span>
         )}
       </div>
-      {detail && <div className="chat-tool-card__detail">{detail}</div>}
-      {isEmpty && <div className="chat-tool-card__status-text muted">Completed</div>}
+      {detail && !expanded && <div className="chat-tool-card__detail">{detail}</div>}
+      {isEmpty && !hasArgs && <div className="chat-tool-card__status-text muted">Completed</div>}
       {isRunning && <div className="chat-tool-card__status-text muted">In progress&hellip;</div>}
       {showCollapsed && (
         <div className="chat-tool-card__preview mono">{getTruncatedPreview(resultText)}</div>
@@ -802,9 +815,54 @@ function ToolCallBlock({ toolCall, onOpenPopout }: { toolCall: ToolCall; onOpenP
       {showInline && (
         <div className="chat-tool-card__inline mono">{resultText}</div>
       )}
+      {expanded && (
+        <div className="chat-tool-card__expanded-detail">
+          {hasArgs && (
+            <div className="chat-tool-card__args">
+              <div className="chat-tool-card__section-label muted">Input</div>
+              <pre className="chat-tool-card__args-content mono">{formatToolArgs(toolCall.args!)}</pre>
+            </div>
+          )}
+          {hasText && (
+            <div className="chat-tool-card__result">
+              <div className="chat-tool-card__section-label muted">Output</div>
+              <pre className="chat-tool-card__result-content mono">{resultText}</pre>
+            </div>
+          )}
+          {!hasText && !hasArgs && (
+            <div className="chat-tool-card__status-text muted">No output captured</div>
+          )}
+          {hasText && (
+            <button className="chat-tool-card__popout-btn" onClick={handlePopout} title="Open in new window">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+              </svg>
+              <span>Open in window</span>
+            </button>
+          )}
+        </div>
+      )}
       <CanvasToolExtras toolCall={toolCall} />
     </div>
   )
+}
+
+/** Format tool call arguments for display */
+function formatToolArgs(args: Record<string, unknown>): string {
+  // Filter out internal keys
+  const filtered = Object.entries(args).filter(([k]) => !k.startsWith('_'))
+  if (filtered.length === 0) return JSON.stringify(args, null, 2)
+  // For single-value args, show just the value
+  if (filtered.length === 1) {
+    const [key, value] = filtered[0]
+    if (typeof value === 'string') return `${key}: ${value}`
+  }
+  return filtered.map(([k, v]) => {
+    const val = typeof v === 'string' ? v : JSON.stringify(v)
+    return `${k}: ${val}`
+  }).join('\n')
 }
 
 /** Extra UI for canvas tool calls: Show Canvas button for present, inline image for snapshot. */

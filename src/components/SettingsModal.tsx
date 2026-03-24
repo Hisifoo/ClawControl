@@ -95,6 +95,9 @@ export function SettingsModal() {
       if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') {
         return 'URL must start with ws:// or wss://'
       }
+      if (!parsed.hostname) {
+        return 'URL must include a hostname'
+      }
       return ''
     } catch {
       return 'Invalid URL format'
@@ -494,7 +497,7 @@ export function SettingsModal() {
                     className="input-icon-btn"
                     onClick={() => setShowToken(!showToken)}
                     title={showToken ? 'Hide' : 'Show'}
-                    tabIndex={-1}
+                    aria-label={showToken ? 'Hide password' : 'Show password'}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                       {showToken ? (
