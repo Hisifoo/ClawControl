@@ -125,4 +125,4 @@ workflows:
           ls -la App.ipa
 
     artifacts:
-      - build/App.ipa
+      - ios/build/App.ipa
