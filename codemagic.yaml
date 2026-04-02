@@ -50,30 +50,48 @@ workflows:
         script: |
           if [ -f "scripts/fix-ios-splash.js" ]; then node scripts/fix-ios-splash.js; fi
 
-      # 8. 动态创建 ExportOptions.plist（Personal Team ad-hoc 签名）
+      # 8. 创建 ExportOptions.plist（无签名 ad-hoc 导出）
       - name: Create ExportOptions.plist
         script: |
-          if [ -z "$DEVELOPMENT_TEAM" ]; then
-            echo "⚠️  WARNING: DEVELOPMENT_TEAM is empty. Set it in Codemagic UI."
-            echo "⚠️  Build may fail without a valid Team ID."
-          fi
-          mkdir -p ios/build
-          printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n    <key>developmentTeam</key>\n    <string>%s</string>\n    <key>exportMethod</key>\n    <string>ad-hoc</string>\n    <key>signingStyle</key>\n    <string>automatic</string>\n    <key>method</key>\n    <string>ad-hoc</string>\n</dict>\n</plist>\n' "$DEVELOPMENT_TEAM" > ios/build/ExportOptions.plist
+          mkdir -p ios
+          cat > ios/ExportOptions.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>ad-hoc</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>signingCertificate</key>
+              <string>-</string>
+          </dict>
+          </plist>
+          EOF
 
-      # 9. 构建 iOS 项目并导出 IPA
+      # 9. 构建 iOS 项目并导出 IPA（-archive 是默认 action，无需显式写）
       - name: Build and export IPA
         script: |
           cd ios/App
+
+          # 先用 xcodebuild -showBuildSettings 确认 scheme 列表
+          xcodebuild -workspace App.xcworkspace -list
+
+          # 构建 archive
           xcodebuild -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
             -archivePath App.xcarchive \
-            -archive
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
 
+          # 导出 IPA（无签名模式）
+          mkdir -p ../build
           xcodebuild -exportArchive \
             -archivePath App.xcarchive \
-            -exportOptionsPlist ../build/ExportOptions.plist \
-            -exportPath ../build
+            -exportPath ../build \
+            -exportOptionsPlist ../ExportOptions.plist
 
     artifacts:
       - build/App.ipa
