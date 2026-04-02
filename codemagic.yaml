@@ -25,12 +25,10 @@ workflows:
         script: |
           npm run mobile:build
 
-      # 3. 添加 iOS 平台（仅首次，ios 目录不存在时）
+      # 3. 添加 iOS 平台（cap add ios 是幂等操作，每次运行都安全）
       - name: Add iOS platform
         script: |
-          if [ ! -d "ios/App" ]; then
-            npx cap add ios
-          fi
+          npx cap add ios
 
       # 4. 同步 Web 产物到 iOS 原生项目
       - name: Sync Capacitor iOS
