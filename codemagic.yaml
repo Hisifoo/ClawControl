@@ -25,10 +25,10 @@ workflows:
         script: |
           npm run mobile:build
 
-      # 3. 添加 iOS 平台（cap add ios 是幂等操作，每次运行都安全）
+      # 3. 添加 iOS 平台（Capacitor 8+ 默认 SPM，需显式指定 CocoaPods）
       - name: Add iOS platform
         script: |
-          npx cap add ios
+          npx cap add ios --packagemanager CocoaPods
 
       # 4. 同步 Web 产物到 iOS 原生项目
       - name: Sync Capacitor iOS
