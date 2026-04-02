@@ -5,14 +5,14 @@ environment:
   group_vars:
     - id: cap_id
       value: com.claw.control
-  node: 20
+  node: 22
 
 workflows:
   ios-build:
     name: Build iOS
     max_build_duration: 60
     environment:
-      node: 20
+      node: 22
       xcode: latest
       cocoapods: default
     scripts:
