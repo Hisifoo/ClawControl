@@ -1,51 +1,82 @@
 app_id: com.claw.control
 
 environment:
-  app_id: com.claw.control
   group_vars:
-    - id: cap_id
-      value: com.claw.control
+    - id: DEVELOPMENT_TEAM
+      value: ""  # ⚠️ 填入你的 Apple Team ID（Personal Team 也有）
   node: 22
 
 workflows:
   ios-build:
-    name: Build iOS
-    max_build_duration: 60
+    name: Build iOS (ClawControl)
+    max_build_duration: 120
     environment:
       node: 22
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Install npm dependencies
+      # 1. 安装 npm 依赖
+      - name: Install dependencies
         script: |
           npm ci
 
+      # 2. 构建 Web 应用
       - name: Build web app
         script: |
           npm run mobile:build
 
+      # 3. 添加 iOS 平台（仅首次，ios 目录不存在时）
       - name: Add iOS platform
         script: |
-          npx cap add ios
+          if [ ! -d "ios/App" ]; then
+            npx cap add ios
+          fi
 
+      # 4. 同步 Web 产物到 iOS 原生项目
       - name: Sync Capacitor iOS
         script: |
           npx cap sync ios
 
+      # 5. 安装 CocoaPods 依赖
+      - name: Install CocoaPods
+        script: |
+          cd ios/App && pod install && cd ../..
+
+      # 6. 生成 iOS 图标和启动屏资源
       - name: Generate iOS assets
         script: |
           npx @capacitor/assets generate --ios --splashBackgroundColor "#06080a" --iconBackgroundColor "#06080a"
 
+      # 7. 修复 iOS 启动屏样式
       - name: Fix iOS splash
         script: |
           if [ -f "scripts/fix-ios-splash.js" ]; then node scripts/fix-ios-splash.js; fi
 
-      - name: Build iOS project
+      # 8. 动态创建 ExportOptions.plist（Personal Team ad-hoc 签名）
+      - name: Create ExportOptions.plist
+        script: |
+          if [ -z "$DEVELOPMENT_TEAM" ]; then
+            echo "⚠️  WARNING: DEVELOPMENT_TEAM is empty. Set it in Codemagic UI."
+            echo "⚠️  Build may fail without a valid Team ID."
+          fi
+          mkdir -p ios/build
+          printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n    <key>developmentTeam</key>\n    <string>%s</string>\n    <key>exportMethod</key>\n    <string>ad-hoc</string>\n    <key>signingStyle</key>\n    <string>automatic</string>\n    <key>method</key>\n    <string>ad-hoc</string>\n</dict>\n</plist>\n' "$DEVELOPMENT_TEAM" > ios/build/ExportOptions.plist
+
+      # 9. 构建 iOS 项目并导出 IPA
+      - name: Build and export IPA
         script: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -archivePath App.xcarchive archive
-          xcodebuild -exportArchive -archivePath App.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ../build
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath App.xcarchive \
+            -archive
+
+          xcodebuild -exportArchive \
+            -archivePath App.xcarchive \
+            -exportOptionsPlist ../build/ExportOptions.plist \
+            -exportPath ../build
 
     artifacts:
-      - build/*.ipa
-      - build/*.dSYM
+      - build/App.ipa
+      - build/App.xcarchive
