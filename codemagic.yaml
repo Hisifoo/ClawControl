@@ -1,0 +1,47 @@
+app_id: com.claw.control
+
+environment:
+  app_id: com.claw.control
+  group_vars:
+    - id: cap_id
+      value: com.claw.control
+  node: 20
+
+workflows:
+  ios-build:
+    name: Build iOS
+    max_build_duration: 60
+    environment:
+      node: 20
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm ci
+
+      - name: Build web app
+        script: |
+          npm run mobile:build
+
+      - name: Sync Capacitor iOS
+        script: |
+          npx cap sync ios
+
+      - name: Generate iOS assets
+        script: |
+          npx @capacitor/assets generate --ios --splashBackgroundColor "#06080a" --iconBackgroundColor "#06080a"
+
+      - name: Fix iOS splash
+        script: |
+          if [ -f "scripts/fix-ios-splash.js" ]; then node scripts/fix-ios-splash.js; fi
+
+      - name: Build iOS project
+        script: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -archivePath App.xcarchive archive
+          xcodebuild -exportArchive -archivePath App.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ../build
+
+    artifacts:
+      - build/*.ipa
+      - build/*.dSYM
