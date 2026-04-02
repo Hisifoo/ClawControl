@@ -9,7 +9,7 @@ environment:
 workflows:
   ios-build:
     name: Build iOS (ClawControl)
-    max_build_duration: 120
+    max_build_duration: 600
     environment:
       node: 22
       xcode: latest
@@ -69,27 +69,39 @@ workflows:
           </plist>
           EOF
 
-      # 9. 构建 iOS 项目并导出 IPA（-archive 是默认 action，无需显式写）
+      # 9. 构建 iOS 项目并导出 IPA
       - name: Build and export IPA
         script: |
+          set -e  # 任何命令失败立即停止
+
           cd ios/App
 
-          # 先用 xcodebuild -showBuildSettings 确认 scheme 列表
+          # 确认当前目录和 scheme 名称
+          echo "=== PWD: $(pwd) ==="
           xcodebuild -workspace App.xcworkspace -list
 
           # 构建 archive
           xcodebuild -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
-            -archivePath App.xcarchive \
+            -archivePath "$(pwd)/App.xcarchive" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
+          # 验证 archive 文件确实存在
+          ARCHIVE_PATH="$(pwd)/App.xcarchive"
+          if [ ! -f "$ARCHIVE_PATH" ]; then
+            echo "ERROR: Archive not created at $ARCHIVE_PATH"
+            ls -la "$(pwd)/"
+            exit 1
+          fi
+          echo "=== Archive found: $ARCHIVE_PATH ==="
+
           # 导出 IPA（无签名模式）
           mkdir -p ../build
           xcodebuild -exportArchive \
-            -archivePath App.xcarchive \
+            -archivePath "$ARCHIVE_PATH" \
             -exportPath ../build \
             -exportOptionsPlist ../ExportOptions.plist
 
