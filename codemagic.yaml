@@ -68,8 +68,8 @@ workflows:
           </plist>
           EOF
 
-      # 9. 构建 iOS 项目并导出 IPA
-      - name: Build and export IPA
+      # 9. 构建 iOS archive 并导出 IPA（手动 xcodebuild，避免与 Codemagic 内置步骤冲突）
+      - name: Build archive and export IPA (custom)
         script: |
           set -e  # 任何命令失败立即停止
 
