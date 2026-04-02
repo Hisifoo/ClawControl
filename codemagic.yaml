@@ -24,6 +24,10 @@ workflows:
         script: |
           npm run mobile:build
 
+      - name: Add iOS platform
+        script: |
+          npx cap add ios
+
       - name: Sync Capacitor iOS
         script: |
           npx cap sync ios
