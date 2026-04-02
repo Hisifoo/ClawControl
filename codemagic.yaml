@@ -9,7 +9,6 @@ environment:
 workflows:
   ios-build:
     name: Build iOS (ClawControl)
-    max_build_duration: 600
     environment:
       node: 22
       xcode: latest
@@ -80,11 +79,12 @@ workflows:
           echo "=== PWD: $(pwd) ==="
           xcodebuild -workspace App.xcworkspace -list
 
-          # 构建 archive
+          # 构建 archive（使用 -verbose 查看详细过程）
           xcodebuild -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
             -archivePath "$(pwd)/App.xcarchive" \
+            -verbose \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
